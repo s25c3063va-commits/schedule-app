@@ -42,16 +42,8 @@
         </div>
       </div>
 
-      <!-- 右側：時計 & アプリ追加ガイドボタン -->
+      <!-- 右側：時計 -->
       <div class="flex items-center gap-1.5">
-        <button id="pwa-install-btn" class="hidden bg-amber-400 hover:bg-amber-300 text-indigo-950 font-bold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[11px] sm:text-xs shadow-md transition-all flex items-center gap-1 animate-pulse">
-          <i class="fa-solid fa-download"></i> <span>アプリ化</span>
-        </button>
-
-        <button id="btn-guide-modal" class="bg-indigo-800/80 hover:bg-indigo-600 text-indigo-100 px-2.5 py-1 rounded-xl text-[11px] font-medium border border-indigo-400/30 flex items-center gap-1 transition-colors">
-          <i class="fa-solid fa-mobile-screen-button text-xs"></i> <span class="hidden sm:inline">スマホで使う</span>
-        </button>
-
         <div class="bg-indigo-900/50 backdrop-blur-md px-2.5 py-1 rounded-xl border border-indigo-500/30 shadow-inner flex items-center gap-2">
           <div class="text-right">
             <div id="current-date" class="text-[9px] text-indigo-200 font-medium leading-none">----/--/--</div>
@@ -165,30 +157,24 @@
 
   <!-- スマホ用 固定ボトムナビゲーションバー -->
   <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 z-30 pb-safe shadow-lg">
-    <div class="grid grid-cols-4 h-14 items-center px-2">
-      <!-- カレンダータブ -->
+    <div class="grid grid-cols-3 h-14 items-center px-4">
+      <!-- 1. カレンダータブ -->
       <button id="bottom-nav-calendar" class="flex flex-col items-center justify-center py-1 text-indigo-600 transition-colors">
         <i class="fa-regular fa-calendar-days text-lg"></i>
         <span class="text-[10px] font-bold mt-0.5">カレンダー</span>
       </button>
 
-      <!-- リストタブ -->
-      <button id="bottom-nav-list" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition-colors">
-        <i class="fa-solid fa-list-ul text-lg"></i>
-        <span class="text-[10px] font-medium mt-0.5">一覧</span>
-      </button>
-
-      <!-- 追加ボタン (FAB風) -->
+      <!-- 2. 追加ボタン (画面下中央・FAB) -->
       <div class="flex items-center justify-center">
-        <button id="bottom-nav-add" class="w-11 h-11 rounded-full bg-indigo-600 active:bg-indigo-700 text-white flex items-center justify-center shadow-lg -translate-y-2.5 transition-transform active:scale-95">
-          <i class="fa-solid fa-plus text-lg"></i>
+        <button id="bottom-nav-add" class="w-12 h-12 rounded-full bg-indigo-600 active:bg-indigo-700 text-white flex items-center justify-center shadow-lg -translate-y-2.5 transition-transform active:scale-95 ring-4 ring-white" aria-label="予定を追加">
+          <i class="fa-solid fa-plus text-xl"></i>
         </button>
       </div>
 
-      <!-- 使い方/ガイドタブ -->
-      <button id="bottom-nav-guide" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition-colors">
-        <i class="fa-solid fa-mobile-screen-button text-lg"></i>
-        <span class="text-[10px] font-medium mt-0.5">アプリ化</span>
+      <!-- 3. 一覧タブ -->
+      <button id="bottom-nav-list" class="flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition-colors">
+        <i class="fa-solid fa-list-ul text-lg"></i>
+        <span class="text-[10px] font-medium mt-0.5">一覧</span>
       </button>
     </div>
   </nav>
@@ -312,51 +298,6 @@
           <button type="submit" class="px-5 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">保存する</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- スマホアプリ化ガイド モーダル -->
-  <div id="guide-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-3 hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 p-5 flex flex-col gap-4 max-h-[85vh] overflow-y-auto">
-      <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-        <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-mobile-screen-button text-indigo-600"></i> スマホでアプリにする方法
-        </h3>
-        <button id="btn-close-guide-modal" class="text-slate-400 hover:text-slate-700">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <div class="flex flex-col gap-4 text-xs text-slate-600">
-        <!-- iPhone / Safari -->
-        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-2">
-          <div class="font-bold text-indigo-700 flex items-center gap-1.5 text-sm">
-            <i class="fa-brands fa-apple text-base"></i> iPhone (Safari) の場合
-          </div>
-          <ol class="list-decimal list-inside space-y-1 pl-1 text-slate-700">
-            <li>Safariでこのページを開きます</li>
-            <li>画面下の共有アイコン <i class="fa-solid fa-arrow-up-from-bracket text-indigo-600 mx-0.5"></i> をタップ</li>
-            <li>メニューから<span class="font-bold text-slate-900">「ホーム画面に追加」</span>を選択</li>
-            <li>右上の「追加」をタップすれば、ホーム画面から本物のアプリのように起動できます！</li>
-          </ol>
-        </div>
-
-        <!-- Android / Chrome -->
-        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-2">
-          <div class="font-bold text-emerald-700 flex items-center gap-1.5 text-sm">
-            <i class="fa-brands fa-android text-base"></i> Android (Chrome) の場合
-          </div>
-          <ol class="list-decimal list-inside space-y-1 pl-1 text-slate-700">
-            <li>Chromeでこのページを開きます</li>
-            <li>右上のメニュー <i class="fa-solid fa-ellipsis-vertical text-emerald-600 mx-0.5"></i> をタップ</li>
-            <li><span class="font-bold text-slate-900">「アプリをインストール」</span>または<span class="font-bold text-slate-900">「ホーム画面に追加」</span>を選択します</li>
-          </ol>
-        </div>
-      </div>
-
-      <button id="btn-guide-modal-ok" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs transition-colors shadow-sm">
-        とじる
-      </button>
     </div>
   </div>
 

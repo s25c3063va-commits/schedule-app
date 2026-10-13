@@ -19,10 +19,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 if (pwaInstallBtn) {
   pwaInstallBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) {
-      openGuideModal();
-      return;
-    }
+    if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === 'accepted') {
@@ -63,7 +60,6 @@ const searchClearBtn = document.getElementById('search-clear-btn');
 const bottomNavCalendar = document.getElementById('bottom-nav-calendar');
 const bottomNavList = document.getElementById('bottom-nav-list');
 const bottomNavAdd = document.getElementById('bottom-nav-add');
-const bottomNavGuide = document.getElementById('bottom-nav-guide');
 
 // モーダル要素
 const eventModal = document.getElementById('event-modal');
@@ -73,12 +69,6 @@ const modalTitle = document.getElementById('modal-title');
 const btnOpenAddModal = document.getElementById('btn-open-add-modal');
 const btnCloseModal = document.getElementById('btn-close-modal');
 const btnCancelModal = document.getElementById('btn-cancel-modal');
-
-// ガイドモーダル要素
-const guideModal = document.getElementById('guide-modal');
-const btnGuideModal = document.getElementById('btn-guide-modal');
-const btnCloseGuideModal = document.getElementById('btn-close-guide-modal');
-const btnGuideModalOk = document.getElementById('btn-guide-modal-ok');
 
 // 日別詳細シート要素
 const dayDetailSheet = document.getElementById('day-detail-sheet');
@@ -143,17 +133,6 @@ function setupEventListeners() {
   if (bottomNavCalendar) bottomNavCalendar.addEventListener('click', () => switchView('calendar'));
   if (bottomNavList) bottomNavList.addEventListener('click', () => switchView('list'));
   if (bottomNavAdd) bottomNavAdd.addEventListener('click', () => openModal());
-  if (bottomNavGuide) bottomNavGuide.addEventListener('click', openGuideModal);
-
-  // ガイドモーダル
-  if (btnGuideModal) btnGuideModal.addEventListener('click', openGuideModal);
-  if (btnCloseGuideModal) btnCloseGuideModal.addEventListener('click', closeGuideModal);
-  if (btnGuideModalOk) btnGuideModalOk.addEventListener('click', closeGuideModal);
-  if (guideModal) {
-    guideModal.addEventListener('click', (e) => {
-      if (e.target === guideModal) closeGuideModal();
-    });
-  }
 
   // 日別シート
   if (btnCloseDaySheet) btnCloseDaySheet.addEventListener('click', closeDaySheet);
@@ -681,22 +660,7 @@ function closeModal() {
   }, 200);
 }
 
-// 9. ガイドモーダル操作
-function openGuideModal() {
-  if (!guideModal) return;
-  guideModal.classList.remove('hidden');
-  setTimeout(() => {
-    guideModal.classList.remove('opacity-0');
-  }, 10);
-}
 
-function closeGuideModal() {
-  if (!guideModal) return;
-  guideModal.classList.add('opacity-0');
-  setTimeout(() => {
-    guideModal.classList.add('hidden');
-  }, 200);
-}
 
 // 10. 保存処理
 function handleFormSubmit(e) {
