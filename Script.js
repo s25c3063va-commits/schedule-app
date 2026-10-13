@@ -319,7 +319,8 @@ function renderCalendar() {
   for (let day = 1; day <= daysInMonth; day++) {
     const dateObj = new Date(year, month, day);
     const dateKey = formatDateKey(dateObj);
-    const dayEvents = events.filter(e => e.date === dateKey);
+    // 同じ日の予定を時間順（早い順）に自動並び替え
+    const dayEvents = events.filter(e => e.date === dateKey).sort(compareEventsByTime);
 
     const cell = document.createElement('div');
     const isToday = dateKey === todayKey;
@@ -371,13 +372,14 @@ function renderCalendar() {
       const rawTitle = ev.title || '';
       const displayTitle = rawTitle.length > 5 ? rawTitle.slice(0, 5) + '…' : rawTitle;
 
-      // スマホの小さなセルでも5文字程度が綺麗に見えるスタイル
+      // スマホの小さなセルでも時間と5文字程度が綺麗に見えるスタイル
       chip.className = `event-chip w-full text-[9px] sm:text-[10px] leading-tight px-0.5 sm:px-1 py-0.5 rounded border ${isDone ? 'bg-slate-100 text-slate-500 border-slate-300 line-through' : `${colorObj.bg} ${colorObj.text} ${colorObj.border}`} font-medium flex items-center gap-0.5 cursor-pointer hover:brightness-95 overflow-hidden`;
       
       let doneIcon = isDone ? '<i class="fa-solid fa-check text-emerald-600 text-[7px] shrink-0"></i>' : '';
       let repeatIcon = (!isDone && ev.repeat && ev.repeat !== 'none') ? '<i class="fa-solid fa-rotate-right text-[7px] text-indigo-400 shrink-0"></i>' : '';
+      let timeText = ev.time ? `<span class="text-[7.5px] sm:text-[8.5px] opacity-75 font-mono font-semibold shrink-0">${ev.time}</span>` : '';
       
-      chip.innerHTML = `${doneIcon}${repeatIcon}<span class="truncate block flex-1 min-w-0 text-left leading-none">${escapeHtml(displayTitle)}</span>`;
+      chip.innerHTML = `${doneIcon}${repeatIcon}${timeText}<span class="truncate block flex-1 min-w-0 text-left leading-none">${escapeHtml(displayTitle)}</span>`;
       
       chip.onclick = (e) => {
         e.stopPropagation();
@@ -435,8 +437,8 @@ function renderDaySheetItems() {
   if (!daySheetItems) return;
   daySheetItems.innerHTML = '';
 
-  const dayEvents = events.filter(e => e.date === selectedDateForSheet);
-  dayEvents.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  // 同じ日の予定を時間順に並び替え
+  const dayEvents = events.filter(e => e.date === selectedDateForSheet).sort(compareEventsByTime);
 
   if (daySheetCount) {
     daySheetCount.textContent = `${dayEvents.length}件の予定`;
@@ -521,7 +523,7 @@ function renderList() {
 
   filtered.sort((a, b) => {
     if (a.date !== b.date) return a.date.localeCompare(b.date);
-    return (a.time || '').localeCompare(b.time || '');
+    return compareEventsByTime(a, b);
   });
 
   const countBadge = document.getElementById('event-count-badge');
@@ -839,3 +841,16 @@ function getRepeatText(repeat) {
     default: return '';
   }
 }
+
+// 同じ日の予定を時間順に並べるソート関数（終日予定は先頭、時間指定ありは早い順）
+function compareEventsByTime(a, b) {
+  const timeA = a.time || '';
+  const timeB = b.time || '';
+  if (timeA !== timeB) {
+    if (!timeA) return -1;
+    if (!timeB) return 1;
+    return timeA.localeCompare(timeB);
+  }
+  return (a.title || '').localeCompare(b.title || '');
+}
+
