@@ -308,7 +308,7 @@ function renderCalendar() {
   for (let i = firstDay - 1; i >= 0; i--) {
     const dayNum = prevMonthDays - i;
     const cell = document.createElement('div');
-    cell.className = "min-h-[58px] sm:min-h-[90px] p-1 bg-slate-50/50 rounded-xl text-slate-300 text-[10px] sm:text-xs select-none flex flex-col justify-between";
+    cell.className = "min-h-[64px] sm:min-h-[92px] p-1 bg-slate-50/50 rounded-xl text-slate-300 text-[10px] sm:text-xs select-none flex flex-col justify-start";
     cell.innerHTML = `<span class="font-medium opacity-60">${dayNum}</span>`;
     grid.appendChild(cell);
   }
@@ -331,9 +331,9 @@ function renderCalendar() {
       borderClass = "border-indigo-300 font-bold";
     }
 
-    cell.className = `min-h-[58px] sm:min-h-[90px] p-1 sm:p-1.5 rounded-xl border ${borderClass} ${bgClass} transition-all flex flex-col justify-between group cursor-pointer ${isHighlighted ? 'calendar-day-highlight' : ''}`;
+    cell.className = `min-h-[64px] sm:min-h-[92px] p-1 sm:p-1.5 rounded-xl border ${borderClass} ${bgClass} transition-all flex flex-col justify-start group cursor-pointer overflow-hidden ${isHighlighted ? 'calendar-day-highlight' : ''}`;
     
-    // セルクリック時: スマホでは日別詳細シート、PCでも日別シートまたは追加
+    // セルクリック時: 日別詳細シートを開く
     cell.onclick = () => {
       openDaySheet(dateKey, dateObj);
     };
@@ -343,62 +343,43 @@ function renderCalendar() {
     dayNumSpan.textContent = day;
 
     const cellHeader = document.createElement('div');
-    cellHeader.className = "flex items-center justify-between mb-0.5";
+    cellHeader.className = "flex items-center justify-between mb-0.5 w-full";
     cellHeader.appendChild(dayNumSpan);
 
-    // イベント件数インジケーター（スマホ向けドット表示）
-    if (dayEvents.length > 0) {
-      const dotWrap = document.createElement('div');
-      dotWrap.className = "flex items-center gap-0.5 sm:hidden";
-      dayEvents.slice(0, 3).forEach(ev => {
-        const dot = document.createElement('span');
-        const colorObj = colorMap[ev.color] || colorMap.blue;
-        // 完了した予定も薄くして消さずに、緑または枠線付きでしっかりと残す
-        dot.className = `w-1.5 h-1.5 rounded-full ${ev.completed ? 'bg-emerald-500 ring-1 ring-emerald-300' : colorObj.dot}`;
-        dotWrap.appendChild(dot);
-      });
-      if (dayEvents.length > 3) {
-        const moreDot = document.createElement('span');
-        moreDot.className = "text-[7px] text-slate-400 font-bold leading-none";
-        moreDot.textContent = `+`;
-        dotWrap.appendChild(moreDot);
-      }
-      cellHeader.appendChild(dotWrap);
+    // 2件を超える場合は右上に+N件バッジ
+    if (dayEvents.length > 2) {
+      const moreCount = document.createElement('span');
+      moreCount.className = "text-[8px] sm:text-[9px] text-indigo-600 font-bold px-1 rounded bg-indigo-50 leading-none";
+      moreCount.textContent = `+${dayEvents.length - 2}`;
+      cellHeader.appendChild(moreCount);
     }
 
     cell.appendChild(cellHeader);
 
-    // デスクトップ用予定テキストチップ
+    // 予定テキストチップ（スマホでも最初の5文字程度がしっかり見えるように常時表示！）
     const eventContainer = document.createElement('div');
-    eventContainer.className = "hidden sm:flex flex-col gap-0.5 overflow-hidden flex-1";
+    eventContainer.className = "flex flex-col gap-0.5 overflow-hidden w-full flex-1";
 
     dayEvents.slice(0, 2).forEach(ev => {
       const chip = document.createElement('div');
       const colorObj = colorMap[ev.color] || colorMap.blue;
       const isDone = ev.completed;
 
-      // 完了した予定も透明度を下げて消さずに、チェックアイコン付きでしっかりと表示し続ける
-      chip.className = `event-chip text-[10px] px-1 py-0.5 rounded border ${isDone ? 'bg-slate-100/90 text-slate-600 border-slate-300 line-through' : `${colorObj.bg} ${colorObj.text} ${colorObj.border}`} truncate font-medium flex items-center justify-between cursor-pointer hover:brightness-95`;
+      // スマホの小さなセルでも5文字程度が綺麗に見えるスタイル
+      chip.className = `event-chip w-full text-[9px] sm:text-[10px] leading-tight px-1 py-0.5 rounded border ${isDone ? 'bg-slate-100 text-slate-500 border-slate-300 line-through' : `${colorObj.bg} ${colorObj.text} ${colorObj.border}`} truncate font-medium flex items-center gap-0.5 cursor-pointer hover:brightness-95`;
       
-      let repeatIcon = ev.repeat && ev.repeat !== 'none' ? '<i class="fa-solid fa-rotate-right text-[8px] mr-0.5"></i>' : '';
-      let doneIcon = isDone ? '<i class="fa-solid fa-check text-emerald-600 text-[8px] mr-0.5"></i>' : '';
+      let doneIcon = isDone ? '<i class="fa-solid fa-check text-emerald-600 text-[7px] shrink-0"></i>' : '';
+      let repeatIcon = (!isDone && ev.repeat && ev.repeat !== 'none') ? '<i class="fa-solid fa-rotate-right text-[7px] text-indigo-400 shrink-0"></i>' : '';
       
-      chip.innerHTML = `<span class="truncate">${doneIcon}${repeatIcon}${escapeHtml(ev.title)}</span>`;
+      chip.innerHTML = `${doneIcon}${repeatIcon}<span class="truncate block">${escapeHtml(ev.title)}</span>`;
       
       chip.onclick = (e) => {
         e.stopPropagation();
-        openModal(ev);
+        openDaySheet(dateKey, dateObj);
       };
 
       eventContainer.appendChild(chip);
     });
-
-    if (dayEvents.length > 2) {
-      const moreBadge = document.createElement('div');
-      moreBadge.className = "text-[9px] text-slate-400 font-medium pl-0.5";
-      moreBadge.textContent = `+${dayEvents.length - 2}件`;
-      eventContainer.appendChild(moreBadge);
-    }
 
     cell.appendChild(eventContainer);
     grid.appendChild(cell);
@@ -409,7 +390,7 @@ function renderCalendar() {
   const nextMonthDays = (42 - totalCells) % 7; 
   for (let i = 1; i <= nextMonthDays; i++) {
     const cell = document.createElement('div');
-    cell.className = "min-h-[58px] sm:min-h-[90px] p-1 bg-slate-50/50 rounded-xl text-slate-300 text-[10px] select-none flex flex-col justify-between";
+    cell.className = "min-h-[64px] sm:min-h-[92px] p-1 bg-slate-50/50 rounded-xl text-slate-300 text-[10px] select-none flex flex-col justify-start";
     cell.innerHTML = `<span class="font-medium opacity-60">${i}</span>`;
     grid.appendChild(cell);
   }
