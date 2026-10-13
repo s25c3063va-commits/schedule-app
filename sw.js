@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smart-schedule-v4';
+const CACHE_NAME = 'smart-schedule-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

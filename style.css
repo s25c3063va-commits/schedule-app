@@ -88,3 +88,13 @@ input, textarea, select {
 button, .touch-target {
   touch-action: manipulation;
 }
+
+/* カレンダー内のイベントチップ（スマホ最適化） */
+.event-chip {
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.shadow-2xs {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.08);
+}

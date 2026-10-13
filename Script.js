@@ -41,11 +41,26 @@ let highlightedDateStr = null;
 let selectedDateForSheet = null;
 
 const colorMap = {
-  blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
-  emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
-  purple: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
-  amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' },
-  rose: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', dot: 'bg-rose-500' }
+  blue: { 
+    bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500',
+    solidBg: 'bg-blue-600', solidText: 'text-white', solidBorder: 'border-blue-700'
+  },
+  emerald: { 
+    bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500',
+    solidBg: 'bg-emerald-600', solidText: 'text-white', solidBorder: 'border-emerald-700'
+  },
+  purple: { 
+    bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500',
+    solidBg: 'bg-purple-600', solidText: 'text-white', solidBorder: 'border-purple-700'
+  },
+  amber: { 
+    bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200', dot: 'bg-amber-500',
+    solidBg: 'bg-amber-600', solidText: 'text-white', solidBorder: 'border-amber-700'
+  },
+  rose: { 
+    bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', dot: 'bg-rose-500',
+    solidBg: 'bg-rose-600', solidText: 'text-white', solidBorder: 'border-rose-700'
+  }
 };
 
 // DOM要素
@@ -382,20 +397,33 @@ function renderCalendar() {
       const chip = document.createElement('div');
       const colorObj = colorMap[ev.color] || colorMap.blue;
       const isDone = ev.completed;
+      const isAllDay = !!(ev.isAllDay || !ev.time);
 
       // 最初の5文字程度を明確に取得
       const rawTitle = ev.title || '';
       const displayTitle = rawTitle.length > 5 ? rawTitle.slice(0, 5) + '…' : rawTitle;
 
-      // スマホの小さなセルでも時間と5文字程度が綺麗に見えるスタイル
-      chip.className = `event-chip w-full text-[9px] sm:text-[10px] leading-tight px-0.5 sm:px-1 py-0.5 rounded border ${isDone ? 'bg-slate-100 text-slate-500 border-slate-300 line-through' : `${colorObj.bg} ${colorObj.text} ${colorObj.border}`} font-medium flex items-center gap-0.5 cursor-pointer hover:brightness-95 overflow-hidden`;
+      // 終日の予定は色を濃く（ベタ塗り背景＋白文字）して直感的にわかりやすく！「終日」の表記は不要
+      let chipStyle = '';
+      if (isDone) {
+        chipStyle = 'bg-slate-100 text-slate-500 border-slate-300 line-through';
+      } else if (isAllDay) {
+        // 終日: 濃い背景色 + 白文字 + 影
+        chipStyle = `${colorObj.solidBg} ${colorObj.solidText} ${colorObj.solidBorder} font-semibold shadow-2xs`;
+      } else {
+        // 通常(時間指定あり): 淡い背景色
+        chipStyle = `${colorObj.bg} ${colorObj.text} ${colorObj.border} font-medium`;
+      }
+
+      chip.className = `event-chip w-full text-[9px] sm:text-[10px] leading-tight px-1 py-0.5 rounded border ${chipStyle} flex items-center gap-0.5 cursor-pointer hover:brightness-95 overflow-hidden`;
       
       let doneIcon = isDone ? '<i class="fa-solid fa-check text-emerald-600 text-[7px] shrink-0"></i>' : '';
-      let repeatIcon = (!isDone && ev.repeat && ev.repeat !== 'none') ? '<i class="fa-solid fa-rotate-right text-[7px] text-indigo-400 shrink-0"></i>' : '';
-      // 終日なら「終日」バッジ、時間ありなら時間を表示
-      let timeText = (ev.isAllDay || !ev.time)
-        ? '<span class="text-[7.5px] sm:text-[8px] bg-indigo-100 text-indigo-800 font-bold px-0.5 rounded shrink-0 leading-none">終日</span>'
-        : (ev.time ? `<span class="text-[7.5px] sm:text-[8.5px] opacity-75 font-mono font-semibold shrink-0">${ev.time}</span>` : '');
+      let repeatIcon = (!isDone && ev.repeat && ev.repeat !== 'none') ? `<i class="fa-solid fa-rotate-right ${isAllDay ? 'text-white/80' : 'text-indigo-400'} text-[7px] shrink-0"></i>` : '';
+      
+      // 時間指定がある場合のみ時間を表示。終日の場合は表記なし（濃い色で表現）
+      let timeText = (!isAllDay && ev.time) 
+        ? `<span class="text-[7.5px] sm:text-[8.5px] opacity-75 font-mono font-semibold shrink-0">${ev.time}</span>` 
+        : '';
       
       chip.innerHTML = `${doneIcon}${repeatIcon}${timeText}<span class="truncate block flex-1 min-w-0 text-left leading-none">${escapeHtml(displayTitle)}</span>`;
       
@@ -490,7 +518,7 @@ function renderDaySheetItems() {
             </span>
             ${ev.completed ? '<span class="text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 py-0.2 rounded font-bold">完了</span>' : ''}
             ${(ev.isAllDay || !ev.time) 
-              ? '<span class="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded font-bold"><i class="fa-solid fa-sun text-[9px] text-amber-500 mr-0.5"></i>終日</span>'
+              ? `<span class="text-[10px] ${colorObj.solidBg} text-white px-1.5 py-0.2 rounded font-bold shadow-2xs"><i class="fa-solid fa-sun text-[9px] mr-1"></i>終日</span>`
               : (ev.time ? `<span class="text-[10px] text-slate-500 font-bold"><i class="fa-regular fa-clock text-[9px]"></i> ${ev.time}</span>` : '')
             }
           </div>
@@ -585,7 +613,7 @@ function renderList() {
             <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded ${colorObj.bg} ${colorObj.text}">
               ${escapeHtml(ev.category || '予定')}
             </span>
-            ${(ev.isAllDay || !ev.time) ? '<span class="text-[9px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-1 py-0.2 rounded font-bold">終日</span>' : ''}
+            ${(ev.isAllDay || !ev.time) ? `<span class="text-[9px] ${colorObj.solidBg} text-white px-1.5 py-0.2 rounded font-bold shadow-2xs">終日</span>` : ''}
             ${ev.completed ? '<span class="text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 py-0.2 rounded font-bold">完了</span>' : ''}
             ${ev.repeat && ev.repeat !== 'none' ? `<span class="text-[9px] text-slate-500 bg-slate-100 px-1 py-0.2 rounded flex items-center gap-0.5"><i class="fa-solid fa-rotate-right text-indigo-500"></i> ${getRepeatText(ev.repeat)}</span>` : ''}
             <span class="text-[10px] text-slate-500 font-medium">
