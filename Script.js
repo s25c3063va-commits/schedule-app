@@ -353,7 +353,8 @@ function renderCalendar() {
       dayEvents.slice(0, 3).forEach(ev => {
         const dot = document.createElement('span');
         const colorObj = colorMap[ev.color] || colorMap.blue;
-        dot.className = `w-1.5 h-1.5 rounded-full ${colorObj.dot} ${ev.completed ? 'opacity-30' : ''}`;
+        // 完了した予定も薄くして消さずに、緑または枠線付きでしっかりと残す
+        dot.className = `w-1.5 h-1.5 rounded-full ${ev.completed ? 'bg-emerald-500 ring-1 ring-emerald-300' : colorObj.dot}`;
         dotWrap.appendChild(dot);
       });
       if (dayEvents.length > 3) {
@@ -376,11 +377,13 @@ function renderCalendar() {
       const colorObj = colorMap[ev.color] || colorMap.blue;
       const isDone = ev.completed;
 
-      chip.className = `event-chip text-[10px] px-1 py-0.5 rounded border ${colorObj.bg} ${colorObj.text} ${colorObj.border} truncate font-medium flex items-center justify-between cursor-pointer hover:brightness-95 ${isDone ? 'opacity-40 line-through' : ''}`;
+      // 完了した予定も透明度を下げて消さずに、チェックアイコン付きでしっかりと表示し続ける
+      chip.className = `event-chip text-[10px] px-1 py-0.5 rounded border ${isDone ? 'bg-slate-100/90 text-slate-600 border-slate-300 line-through' : `${colorObj.bg} ${colorObj.text} ${colorObj.border}`} truncate font-medium flex items-center justify-between cursor-pointer hover:brightness-95`;
       
       let repeatIcon = ev.repeat && ev.repeat !== 'none' ? '<i class="fa-solid fa-rotate-right text-[8px] mr-0.5"></i>' : '';
+      let doneIcon = isDone ? '<i class="fa-solid fa-check text-emerald-600 text-[8px] mr-0.5"></i>' : '';
       
-      chip.innerHTML = `<span class="truncate">${repeatIcon}${escapeHtml(ev.title)}</span>`;
+      chip.innerHTML = `<span class="truncate">${doneIcon}${repeatIcon}${escapeHtml(ev.title)}</span>`;
       
       chip.onclick = (e) => {
         e.stopPropagation();
@@ -469,8 +472,8 @@ function renderDaySheetItems() {
 
     item.innerHTML = `
       <div class="flex items-center gap-2.5 min-w-0">
-        <button onclick="toggleEventComplete('${ev.id}', event); renderDaySheetItems();" class="text-base text-slate-300 hover:text-indigo-600 shrink-0">
-          <i class="${ev.completed ? 'fa-solid fa-circle-check text-indigo-600' : 'fa-regular fa-circle'}"></i>
+        <button onclick="toggleEventComplete('${ev.id}', event); renderDaySheetItems();" class="text-base ${ev.completed ? 'text-emerald-600' : 'text-slate-300 hover:text-indigo-600'} shrink-0">
+          <i class="${ev.completed ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}"></i>
         </button>
 
         <div class="flex flex-col min-w-0">
@@ -478,9 +481,10 @@ function renderDaySheetItems() {
             <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded ${colorObj.bg} ${colorObj.text}">
               ${escapeHtml(ev.category || '予定')}
             </span>
+            ${ev.completed ? '<span class="text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 py-0.2 rounded font-bold">完了</span>' : ''}
             ${ev.time ? `<span class="text-[10px] text-slate-500 font-bold"><i class="fa-regular fa-clock text-[9px]"></i> ${ev.time}</span>` : ''}
           </div>
-          <h4 class="font-bold text-slate-800 text-xs sm:text-sm truncate ${ev.completed ? 'line-through text-slate-400' : ''}">
+          <h4 class="font-bold text-xs sm:text-sm truncate ${ev.completed ? 'line-through text-slate-500' : 'text-slate-800'}">
             ${escapeHtml(ev.title)}
           </h4>
           ${ev.description ? `<p class="text-[10px] text-slate-400 truncate">${escapeHtml(ev.description)}</p>` : ''}
@@ -508,7 +512,7 @@ function renderList() {
   listContainer.innerHTML = '';
 
   const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-  const periodFilter = filterPeriod ? filterPeriod.value : 'upcoming';
+  const periodFilter = filterPeriod ? filterPeriod.value : 'all';
   const statusFilter = filterStatus ? filterStatus.value : 'all';
   const todayKey = formatDateKey(new Date());
 
@@ -562,8 +566,8 @@ function renderList() {
 
     card.innerHTML = `
       <div class="flex items-center gap-2.5 min-w-0">
-        <button onclick="toggleEventComplete('${ev.id}', event)" class="no-jump text-base transition-colors text-slate-300 hover:text-indigo-600 shrink-0">
-          <i class="${ev.completed ? 'fa-solid fa-circle-check text-indigo-600' : 'fa-regular fa-circle'}"></i>
+        <button onclick="toggleEventComplete('${ev.id}', event)" class="no-jump text-base ${ev.completed ? 'text-emerald-600' : 'text-slate-300 hover:text-indigo-600'} transition-colors shrink-0">
+          <i class="${ev.completed ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}"></i>
         </button>
 
         <div class="flex flex-col min-w-0">
@@ -571,12 +575,13 @@ function renderList() {
             <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded ${colorObj.bg} ${colorObj.text}">
               ${escapeHtml(ev.category || '予定')}
             </span>
+            ${ev.completed ? '<span class="text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 py-0.2 rounded font-bold">完了</span>' : ''}
             ${ev.repeat && ev.repeat !== 'none' ? `<span class="text-[9px] text-slate-500 bg-slate-100 px-1 py-0.2 rounded flex items-center gap-0.5"><i class="fa-solid fa-rotate-right text-indigo-500"></i> ${getRepeatText(ev.repeat)}</span>` : ''}
             <span class="text-[10px] text-slate-500 font-medium">
               ${formattedDateStr} ${ev.time ? ' ' + ev.time : ''}
             </span>
           </div>
-          <h3 class="font-bold text-slate-800 text-xs sm:text-sm truncate ${ev.completed ? 'line-through text-slate-400' : ''}">
+          <h3 class="font-bold text-xs sm:text-sm truncate ${ev.completed ? 'line-through text-slate-500' : 'text-slate-800'}">
             ${escapeHtml(ev.title)}
           </h3>
         </div>
