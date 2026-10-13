@@ -418,14 +418,14 @@ function renderCalendar() {
       chip.className = `event-chip w-full text-[9px] sm:text-[10px] leading-tight px-1 py-0.5 rounded border ${chipStyle} flex items-center gap-0.5 cursor-pointer hover:brightness-95 overflow-hidden`;
       
       let doneIcon = isDone ? '<i class="fa-solid fa-check text-emerald-600 text-[7px] shrink-0"></i>' : '';
-      let repeatIcon = (!isDone && ev.repeat && ev.repeat !== 'none') ? `<i class="fa-solid fa-rotate-right ${isAllDay ? 'text-white/80' : 'text-indigo-400'} text-[7px] shrink-0"></i>` : '';
       
       // 時間指定がある場合のみ時間を表示。終日の場合は表記なし（濃い色で表現）
+      // 繰り返しマークはつけず通常の予定と同じように表記
       let timeText = (!isAllDay && ev.time) 
         ? `<span class="text-[7.5px] sm:text-[8.5px] opacity-75 font-mono font-semibold shrink-0">${ev.time}</span>` 
         : '';
       
-      chip.innerHTML = `${doneIcon}${repeatIcon}${timeText}<span class="truncate block flex-1 min-w-0 text-left leading-none">${escapeHtml(displayTitle)}</span>`;
+      chip.innerHTML = `${doneIcon}${timeText}<span class="truncate block flex-1 min-w-0 text-left leading-none">${escapeHtml(displayTitle)}</span>`;
       
       chip.onclick = (e) => {
         e.stopPropagation();
@@ -615,7 +615,6 @@ function renderList() {
             </span>
             ${(ev.isAllDay || !ev.time) ? `<span class="text-[9px] ${colorObj.solidBg} text-white px-1.5 py-0.2 rounded font-bold shadow-2xs">終日</span>` : ''}
             ${ev.completed ? '<span class="text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 py-0.2 rounded font-bold">完了</span>' : ''}
-            ${ev.repeat && ev.repeat !== 'none' ? `<span class="text-[9px] text-slate-500 bg-slate-100 px-1 py-0.2 rounded flex items-center gap-0.5"><i class="fa-solid fa-rotate-right text-indigo-500"></i> ${getRepeatText(ev.repeat)}</span>` : ''}
             <span class="text-[10px] text-slate-500 font-medium">
               ${formattedDateStr} ${(!ev.isAllDay && ev.time) ? ' ' + ev.time : ''}
             </span>
