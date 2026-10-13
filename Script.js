@@ -84,6 +84,7 @@ const eventIdInput = document.getElementById('event-id');
 const eventTitleInput = document.getElementById('event-title-input');
 const eventDateInput = document.getElementById('event-date-input');
 const eventTimeInput = document.getElementById('event-time-input');
+const eventAllDayInput = document.getElementById('event-allday-input');
 const eventRepeatSelect = document.getElementById('event-repeat-select');
 const eventCategoryInput = document.getElementById('event-category-input');
 const eventDescriptionInput = document.getElementById('event-description-input');
@@ -208,6 +209,20 @@ function setupEventListeners() {
   }
 
   if (eventForm) eventForm.addEventListener('submit', handleFormSubmit);
+
+  // 終日チェックボックスの切り替え制御
+  if (eventAllDayInput) {
+    eventAllDayInput.addEventListener('change', () => {
+      if (eventTimeInput) {
+        if (eventAllDayInput.checked) {
+          eventTimeInput.value = '';
+          eventTimeInput.disabled = true;
+        } else {
+          eventTimeInput.disabled = false;
+        }
+      }
+    });
+  }
 
   if (btnClearHistory) {
     btnClearHistory.addEventListener('click', () => {
@@ -377,7 +392,10 @@ function renderCalendar() {
       
       let doneIcon = isDone ? '<i class="fa-solid fa-check text-emerald-600 text-[7px] shrink-0"></i>' : '';
       let repeatIcon = (!isDone && ev.repeat && ev.repeat !== 'none') ? '<i class="fa-solid fa-rotate-right text-[7px] text-indigo-400 shrink-0"></i>' : '';
-      let timeText = ev.time ? `<span class="text-[7.5px] sm:text-[8.5px] opacity-75 font-mono font-semibold shrink-0">${ev.time}</span>` : '';
+      // 終日なら「終日」バッジ、時間ありなら時間を表示
+      let timeText = (ev.isAllDay || !ev.time)
+        ? '<span class="text-[7.5px] sm:text-[8px] bg-indigo-100 text-indigo-800 font-bold px-0.5 rounded shrink-0 leading-none">終日</span>'
+        : (ev.time ? `<span class="text-[7.5px] sm:text-[8.5px] opacity-75 font-mono font-semibold shrink-0">${ev.time}</span>` : '');
       
       chip.innerHTML = `${doneIcon}${repeatIcon}${timeText}<span class="truncate block flex-1 min-w-0 text-left leading-none">${escapeHtml(displayTitle)}</span>`;
       
@@ -471,7 +489,10 @@ function renderDaySheetItems() {
               ${escapeHtml(ev.category || '予定')}
             </span>
             ${ev.completed ? '<span class="text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 py-0.2 rounded font-bold">完了</span>' : ''}
-            ${ev.time ? `<span class="text-[10px] text-slate-500 font-bold"><i class="fa-regular fa-clock text-[9px]"></i> ${ev.time}</span>` : ''}
+            ${(ev.isAllDay || !ev.time) 
+              ? '<span class="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded font-bold"><i class="fa-solid fa-sun text-[9px] text-amber-500 mr-0.5"></i>終日</span>'
+              : (ev.time ? `<span class="text-[10px] text-slate-500 font-bold"><i class="fa-regular fa-clock text-[9px]"></i> ${ev.time}</span>` : '')
+            }
           </div>
           <h4 class="font-bold text-xs sm:text-sm truncate ${ev.completed ? 'line-through text-slate-500' : 'text-slate-800'}">
             ${escapeHtml(ev.title)}
@@ -564,10 +585,11 @@ function renderList() {
             <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded ${colorObj.bg} ${colorObj.text}">
               ${escapeHtml(ev.category || '予定')}
             </span>
+            ${(ev.isAllDay || !ev.time) ? '<span class="text-[9px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-1 py-0.2 rounded font-bold">終日</span>' : ''}
             ${ev.completed ? '<span class="text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 py-0.2 rounded font-bold">完了</span>' : ''}
             ${ev.repeat && ev.repeat !== 'none' ? `<span class="text-[9px] text-slate-500 bg-slate-100 px-1 py-0.2 rounded flex items-center gap-0.5"><i class="fa-solid fa-rotate-right text-indigo-500"></i> ${getRepeatText(ev.repeat)}</span>` : ''}
             <span class="text-[10px] text-slate-500 font-medium">
-              ${formattedDateStr} ${ev.time ? ' ' + ev.time : ''}
+              ${formattedDateStr} ${(!ev.isAllDay && ev.time) ? ' ' + ev.time : ''}
             </span>
           </div>
           <h3 class="font-bold text-xs sm:text-sm truncate ${ev.completed ? 'line-through text-slate-500' : 'text-slate-800'}">
@@ -613,7 +635,14 @@ function openModal(eventObj = null, defaultDateStr = null) {
     if (eventIdInput) eventIdInput.value = eventObj.id;
     if (eventTitleInput) eventTitleInput.value = eventObj.title;
     if (eventDateInput) eventDateInput.value = eventObj.date;
-    if (eventTimeInput) eventTimeInput.value = eventObj.time || '';
+
+    const isAllDay = !!(eventObj.isAllDay || (!eventObj.time && eventObj.time !== undefined));
+    if (eventAllDayInput) eventAllDayInput.checked = isAllDay;
+    if (eventTimeInput) {
+      eventTimeInput.value = isAllDay ? '' : (eventObj.time || '');
+      eventTimeInput.disabled = isAllDay;
+    }
+
     if (eventRepeatSelect) eventRepeatSelect.value = eventObj.repeat || 'none';
     if (eventCategoryInput) eventCategoryInput.value = eventObj.category || '仕事';
     if (eventDescriptionInput) eventDescriptionInput.value = eventObj.description || '';
@@ -624,6 +653,13 @@ function openModal(eventObj = null, defaultDateStr = null) {
     if (modalTitle) modalTitle.innerHTML = '<i class="fa-solid fa-calendar-plus"></i> 予定を追加';
     if (eventIdInput) eventIdInput.value = '';
     if (eventDateInput) eventDateInput.value = defaultDateStr || formatDateKey(new Date());
+
+    if (eventAllDayInput) eventAllDayInput.checked = false;
+    if (eventTimeInput) {
+      eventTimeInput.value = '';
+      eventTimeInput.disabled = false;
+    }
+
     if (eventRepeatSelect) eventRepeatSelect.value = 'none';
     const defaultColorRadio = eventForm.querySelector('input[name="event-color"][value="blue"]');
     if (defaultColorRadio) defaultColorRadio.checked = true;
@@ -663,7 +699,8 @@ function handleFormSubmit(e) {
   const id = (eventIdInput && eventIdInput.value) || generateId();
   const title = eventTitleInput ? eventTitleInput.value.trim() : '';
   const startDate = eventDateInput ? eventDateInput.value : '';
-  const time = eventTimeInput ? eventTimeInput.value : '';
+  const isAllDay = eventAllDayInput ? eventAllDayInput.checked : false;
+  const time = isAllDay ? '' : (eventTimeInput ? eventTimeInput.value : '');
   const repeat = eventRepeatSelect ? eventRepeatSelect.value : 'none';
   const category = eventCategoryInput ? eventCategoryInput.value : '仕事';
   const description = eventDescriptionInput ? eventDescriptionInput.value.trim() : '';
@@ -684,6 +721,7 @@ function handleFormSubmit(e) {
       title,
       date: startDate,
       time,
+      isAllDay,
       repeat: 'none',
       category,
       color,
@@ -706,6 +744,7 @@ function handleFormSubmit(e) {
         title,
         date: dateStr,
         time,
+        isAllDay,
         repeat,
         category,
         color,
@@ -842,13 +881,18 @@ function getRepeatText(repeat) {
   }
 }
 
-// 同じ日の予定を時間順に並べるソート関数（終日予定は先頭、時間指定ありは早い順）
+// 同じ日の予定を時間順に並べるソート関数（終日予定は一番上、時間指定ありは早い順）
 function compareEventsByTime(a, b) {
+  const isAllDayA = !!(a.isAllDay || !a.time);
+  const isAllDayB = !!(b.isAllDay || !b.time);
+
+  if (isAllDayA && !isAllDayB) return -1;
+  if (!isAllDayA && isAllDayB) return 1;
+  if (isAllDayA && isAllDayB) return (a.title || '').localeCompare(b.title || '');
+
   const timeA = a.time || '';
   const timeB = b.time || '';
   if (timeA !== timeB) {
-    if (!timeA) return -1;
-    if (!timeB) return 1;
     return timeA.localeCompare(timeB);
   }
   return (a.title || '').localeCompare(b.title || '');
