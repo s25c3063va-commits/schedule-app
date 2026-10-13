@@ -399,9 +399,9 @@ function renderCalendar() {
       const isDone = ev.completed;
       const isAllDay = !!(ev.isAllDay || !ev.time);
 
-      // 最初の5文字程度を明確に取得
+      // 最初の6文字程度を取得（スマホでも枠いっぱいに予定内容が読めるように）
       const rawTitle = ev.title || '';
-      const displayTitle = rawTitle.length > 5 ? rawTitle.slice(0, 5) + '…' : rawTitle;
+      const displayTitle = rawTitle.length > 6 ? rawTitle.slice(0, 6) + '…' : rawTitle;
 
       // 終日の予定は色を濃く（ベタ塗り背景＋白文字）して直感的にわかりやすく！「終日」の表記は不要
       let chipStyle = '';
@@ -419,13 +419,14 @@ function renderCalendar() {
       
       let doneIcon = isDone ? '<i class="fa-solid fa-check text-emerald-600 text-[7px] shrink-0"></i>' : '';
       
-      // 時間指定がある場合のみ時間を表示。終日の場合は表記なし（濃い色で表現）
-      // 繰り返しマークはつけず通常の予定と同じように表記
+      // 時間表記よりも予定の内容（タイトル）を先頭・最優先で表示！
+      // スマホでは枠の幅を最大限タイトルに使い、広い画面（PC）でのみ後ろに時間を表示
       let timeText = (!isAllDay && ev.time) 
-        ? `<span class="text-[7.5px] sm:text-[8.5px] opacity-75 font-mono font-semibold shrink-0">${ev.time}</span>` 
+        ? `<span class="hidden sm:inline text-[8px] opacity-75 font-mono shrink-0 ml-0.5">${ev.time}</span>` 
         : '';
       
-      chip.innerHTML = `${doneIcon}${timeText}<span class="truncate block flex-1 min-w-0 text-left leading-none">${escapeHtml(displayTitle)}</span>`;
+      // 予定内容（タイトル）を先に配置
+      chip.innerHTML = `${doneIcon}<span class="truncate block flex-1 min-w-0 text-left leading-none">${escapeHtml(displayTitle)}</span>${timeText}`;
       
       chip.onclick = (e) => {
         e.stopPropagation();
