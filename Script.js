@@ -1,8 +1,10 @@
-// --- PWA Service Worker 登録 ---
+// --- PWA Service Worker 登録 & 即時更新チェック ---
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(err => {
-      console.log('ServiceWorker registration note:', err);
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      reg.update();
+    }).catch(err => {
+      console.log('ServiceWorker note:', err);
     });
   });
 }
@@ -365,13 +367,17 @@ function renderCalendar() {
       const colorObj = colorMap[ev.color] || colorMap.blue;
       const isDone = ev.completed;
 
+      // 最初の5文字程度を明確に取得
+      const rawTitle = ev.title || '';
+      const displayTitle = rawTitle.length > 5 ? rawTitle.slice(0, 5) + '…' : rawTitle;
+
       // スマホの小さなセルでも5文字程度が綺麗に見えるスタイル
-      chip.className = `event-chip w-full text-[9px] sm:text-[10px] leading-tight px-1 py-0.5 rounded border ${isDone ? 'bg-slate-100 text-slate-500 border-slate-300 line-through' : `${colorObj.bg} ${colorObj.text} ${colorObj.border}`} truncate font-medium flex items-center gap-0.5 cursor-pointer hover:brightness-95`;
+      chip.className = `event-chip w-full text-[9px] sm:text-[10px] leading-tight px-0.5 sm:px-1 py-0.5 rounded border ${isDone ? 'bg-slate-100 text-slate-500 border-slate-300 line-through' : `${colorObj.bg} ${colorObj.text} ${colorObj.border}`} font-medium flex items-center gap-0.5 cursor-pointer hover:brightness-95 overflow-hidden`;
       
       let doneIcon = isDone ? '<i class="fa-solid fa-check text-emerald-600 text-[7px] shrink-0"></i>' : '';
       let repeatIcon = (!isDone && ev.repeat && ev.repeat !== 'none') ? '<i class="fa-solid fa-rotate-right text-[7px] text-indigo-400 shrink-0"></i>' : '';
       
-      chip.innerHTML = `${doneIcon}${repeatIcon}<span class="truncate block">${escapeHtml(ev.title)}</span>`;
+      chip.innerHTML = `${doneIcon}${repeatIcon}<span class="truncate block flex-1 min-w-0 text-left leading-none">${escapeHtml(displayTitle)}</span>`;
       
       chip.onclick = (e) => {
         e.stopPropagation();
