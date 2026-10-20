@@ -176,6 +176,7 @@ const toastIcon = document.getElementById('toast-icon');
 
 const filterPeriod = document.getElementById('filter-period');
 const filterStatus = document.getElementById('filter-status');
+const filterDateContext = document.getElementById('filter-date-context');
 
 document.addEventListener('DOMContentLoaded', () => {
   startRealtimeClock();
@@ -591,6 +592,7 @@ function renderCalendar() {
 // 5. 日別詳細ボトムシート表示
 function openDaySheet(dateKey, dateObj = null) {
   selectedDateForSheet = dateKey;
+  renderList();
   if (!dateObj) {
     const [y, m, d] = dateKey.split('-').map(Number);
     dateObj = new Date(y, m - 1, d);
@@ -691,6 +693,29 @@ function renderList() {
   const periodFilter = filterPeriod ? filterPeriod.value : 'all';
   const statusFilter = filterStatus ? filterStatus.value : 'all';
   const todayKey = formatDateKey(new Date());
+  const referenceDate = selectedDateForSheet
+    ? new Date(`${selectedDateForSheet}T00:00:00`)
+    : new Date();
+  const referenceDateKey = formatDateKey(referenceDate);
+  const weekStart = new Date(referenceDate);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const weekStartKey = formatDateKey(weekStart);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const weekEndKey = formatDateKey(weekEnd);
+
+  if (filterDateContext) {
+    if (periodFilter === 'selected-day') {
+      filterDateContext.textContent = `対象日: ${referenceDateKey.replace(/-/g, '/')}`;
+      filterDateContext.classList.remove('hidden');
+    } else if (periodFilter === 'selected-week') {
+      filterDateContext.textContent = `対象週: ${weekStartKey.replace(/-/g, '/')}〜${weekEndKey.replace(/-/g, '/')}`;
+      filterDateContext.classList.remove('hidden');
+    } else {
+      filterDateContext.textContent = '';
+      filterDateContext.classList.add('hidden');
+    }
+  }
 
   let filtered = events.filter(ev => {
     const matchesQuery = ev.title.toLowerCase().includes(query) || 
@@ -702,6 +727,8 @@ function renderList() {
     if (statusFilter === 'completed' && !ev.completed) return false;
 
     if (periodFilter === 'today' && ev.date !== todayKey) return false;
+    if (periodFilter === 'selected-day' && ev.date !== referenceDateKey) return false;
+    if (periodFilter === 'selected-week' && (ev.date < weekStartKey || ev.date > weekEndKey)) return false;
     if (periodFilter === 'upcoming' && ev.date < todayKey) return false;
     if (periodFilter === 'past' && ev.date >= todayKey) return false;
 
@@ -781,6 +808,7 @@ function renderList() {
 function jumpToCalendarDate(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   calendarDate = new Date(y, m - 1, 1);
+  selectedDateForSheet = dateStr;
   highlightedDateStr = dateStr;
   switchView('calendar');
 
