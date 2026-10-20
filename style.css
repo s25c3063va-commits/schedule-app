@@ -25,29 +25,23 @@ input, textarea, select {
   font-size: 16px !important;
 }
 
-/* モバイル対応：時間入力欄のはみ出し防止・サイズ完全収容・ズレ防止 */
+/* モバイル対応：時間入力欄の適正サイズと枠内収容 */
 input[type="time"] {
-  display: block;
+  font-size: 13.5px !important; /* スマホの2列幅でも余裕で収まるサイズ（time型はズームしません） */
+  min-width: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
-  min-width: 0 !important;
+  box-sizing: border-box !important;
   height: 38px !important;
   min-height: 38px !important;
-  line-height: 38px !important;
-  box-sizing: border-box !important;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  padding: 0 6px !important;
-  font-size: 15px !important;
+  background-color: #ffffff !important;
 }
 
-input[type="time"]::-webkit-date-and-time-value {
-  text-align: center;
-  line-height: 38px;
-  height: 38px;
-  margin: 0;
-  padding: 0;
+@media (min-width: 640px) {
+  input[type="time"] {
+    font-size: 14px !important;
+    height: 40px !important;
+  }
 }
 
 @media (min-width: 640px) {
