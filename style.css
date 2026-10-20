@@ -76,6 +76,8 @@ input, textarea, select {
 /* 時間入力フィールド：iOS Safari・Android・PCすべてで確実にピッカーが開くスタイル */
 .time-picker-field {
   width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
   height: 42px !important;
   min-height: 42px !important;
   padding: 0 10px !important;
@@ -92,6 +94,14 @@ input, textarea, select {
   cursor: pointer !important;
   touch-action: manipulation !important;
 }
+
+@media (max-width: 639px) {
+  .time-picker-field {
+    text-align: left !important;
+    padding-inline: 12px !important;
+  }
+}
+
 .time-picker-field:focus {
   border-color: #4f46e5 !important;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;

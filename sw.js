@@ -1,8 +1,8 @@
-const CACHE_NAME = 'smart-schedule-v17';
+const CACHE_NAME = 'smart-schedule-v18';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css?v=16',
+  './style.css?v=17',
   './Script.js?v=17',
   './manifest.json',
   './icons/icon-192.svg',
