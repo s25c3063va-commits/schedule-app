@@ -32,8 +32,56 @@ if (pwaInstallBtn) {
 }
 
 // --- アプリ状態管理 (State) ---
-let events = JSON.parse(localStorage.getItem('schedule_book_events')) || [];
-let historyTemplates = JSON.parse(localStorage.getItem('schedule_book_history')) || [];
+function isValidEventData(item) {
+  if (
+    !item ||
+    typeof item !== 'object' ||
+    Array.isArray(item) ||
+    typeof item.id !== 'string' ||
+    !/^[a-z0-9]+$/i.test(item.id) ||
+    typeof item.title !== 'string' ||
+    typeof item.date !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(item.date) ||
+    (item.time !== undefined && typeof item.time !== 'string') ||
+    (item.endTime !== undefined && typeof item.endTime !== 'string') ||
+    (item.category !== undefined && typeof item.category !== 'string') ||
+    (item.color !== undefined && typeof item.color !== 'string') ||
+    (item.description !== undefined && typeof item.description !== 'string') ||
+    (item.completed !== undefined && typeof item.completed !== 'boolean') ||
+    (item.isAllDay !== undefined && typeof item.isAllDay !== 'boolean') ||
+    (item.groupId !== undefined && typeof item.groupId !== 'string') ||
+    (item.repeat !== undefined && typeof item.repeat !== 'string')
+  ) return false;
+
+  const date = new Date(`${item.date}T00:00:00`);
+  return !Number.isNaN(date.getTime()) && formatDateKey(date) === item.date;
+}
+
+function loadStoredArray(key, isValidItem) {
+  try {
+    const storedValue = localStorage.getItem(key);
+    if (!storedValue) return [];
+    const parsed = JSON.parse(storedValue);
+    if (!Array.isArray(parsed)) {
+      console.error(`保存データ "${key}" が配列ではありません。`);
+      return [];
+    }
+    const validItems = parsed.filter(isValidItem);
+    if (validItems.length !== parsed.length) {
+      console.error(`保存データ "${key}" に不正な項目が ${parsed.length - validItems.length} 件あります。`);
+    }
+    return validItems;
+  } catch (error) {
+    console.error(`保存データ "${key}" を読み込めませんでした。`, error);
+    return [];
+  }
+}
+
+let events = loadStoredArray('schedule_book_events', isValidEventData);
+let historyTemplates = loadStoredArray(
+  'schedule_book_history',
+  item => item && typeof item === 'object' && typeof item.title === 'string'
+);
 let currentDate = new Date();
 let calendarDate = new Date();
 let activeView = 'calendar';
@@ -831,7 +879,7 @@ function handleFormSubmit(e) {
   const isAllDay = eventAllDayInput ? eventAllDayInput.checked : false;
   const time = isAllDay ? '' : (eventTimeInput ? eventTimeInput.value : '');
   const endTime = isAllDay ? '' : (eventEndTimeInput ? eventEndTimeInput.value : '');
-  const repeat = eventRepeatSelect ? eventRepeatSelect.value : 'none';
+  let repeat = eventRepeatSelect ? eventRepeatSelect.value : 'none';
   const category = eventCategoryInput ? eventCategoryInput.value : '仕事';
   const description = eventDescriptionInput ? eventDescriptionInput.value.trim() : '';
   const color = eventForm.querySelector('input[name="event-color"]:checked')?.value || 'blue';
@@ -844,12 +892,28 @@ function handleFormSubmit(e) {
     return;
   }
 
-  if (eventIdInput && eventIdInput.value) {
-    events = events.filter(item => item.id !== id);
+  const originalEvent = eventIdInput && eventIdInput.value
+    ? events.find(item => item.id === id)
+    : null;
+  const editSeries = !!(originalEvent?.groupId && confirm(
+        'この予定は繰り返し設定されています。\n・[OK]: シリーズ全体を編集\n・[キャンセル]: この日の予定のみ編集'
+      ));
+
+  const originalSeries = editSeries
+    ? events.filter(item => item.groupId === originalEvent.groupId)
+    : [];
+  if (originalEvent) {
+    events = editSeries
+      ? events.filter(item => item.groupId !== originalEvent.groupId)
+      : events.filter(item => item.id !== id);
+  }
+  if (originalEvent?.groupId && !editSeries) {
+    repeat = 'none';
+    if (eventRepeatSelect) eventRepeatSelect.value = 'none';
   }
 
   const newEvents = [];
-  const repeatGroupId = repeat !== 'none' ? generateId() : null;
+  const repeatGroupId = repeat !== 'none' ? (originalEvent?.groupId || generateId()) : null;
 
   if (repeat === 'none') {
     newEvents.push({
@@ -870,13 +934,17 @@ function handleFormSubmit(e) {
     const limitDate = new Date(baseDate);
     limitDate.setFullYear(limitDate.getFullYear() + 1);
 
-    let curDate = new Date(baseDate);
     let count = 0;
 
-    while (curDate <= limitDate && count < 365) {
+    while (count < 365) {
+      const curDate = getRepeatDate(baseDate, repeat, count);
+      if (curDate > limitDate) break;
       const dateStr = formatDateKey(curDate);
+      const previousOccurrence = editSeries
+        ? originalSeries.find(item => item.date === dateStr)
+        : null;
       newEvents.push({
-        id: count === 0 ? id : generateId(),
+        id: previousOccurrence?.id || (count === 0 ? id : generateId()),
         groupId: repeatGroupId,
         title,
         date: dateStr,
@@ -887,13 +955,9 @@ function handleFormSubmit(e) {
         category,
         color,
         description,
-        completed: false
+        completed: previousOccurrence?.completed || false
       });
 
-      if (repeat === 'daily') curDate.setDate(curDate.getDate() + 1);
-      else if (repeat === 'weekly') curDate.setDate(curDate.getDate() + 7);
-      else if (repeat === 'monthly') curDate.setMonth(curDate.getMonth() + 1);
-      else if (repeat === 'yearly') curDate.setFullYear(curDate.getFullYear() + 1);
       count++;
     }
   }
@@ -992,6 +1056,26 @@ function formatDateKey(d) {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const date = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${date}`;
+}
+
+function getRepeatDate(baseDate, repeat, occurrence) {
+  const date = new Date(baseDate);
+  if (repeat === 'daily') {
+    date.setDate(date.getDate() + occurrence);
+  } else if (repeat === 'weekly') {
+    date.setDate(date.getDate() + occurrence * 7);
+  } else if (repeat === 'monthly') {
+    const targetMonth = baseDate.getMonth() + occurrence;
+    date.setDate(1);
+    date.setMonth(targetMonth);
+    date.setDate(Math.min(baseDate.getDate(), new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()));
+  } else if (repeat === 'yearly') {
+    date.setDate(1);
+    date.setFullYear(baseDate.getFullYear() + occurrence);
+    date.setMonth(baseDate.getMonth());
+    date.setDate(Math.min(baseDate.getDate(), new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()));
+  }
+  return date;
 }
 
 function generateId() {
@@ -1113,20 +1197,24 @@ function handleImportData(e) {
   reader.onload = (event) => {
     try {
       const imported = JSON.parse(event.target.result);
-      if (Array.isArray(imported)) {
-        events = imported;
-        saveEvents();
-        renderCalendar();
-        renderDaySheet();
-        alert('データを復元しました！');
-      } else {
-        alert('ファイルの形式が正しくありません。');
+      const validEvents = Array.isArray(imported) && imported.every(isValidEventData);
+      if (!validEvents) {
+        alert('ファイルの形式が正しくありません。予定データを含むJSONファイルを選択してください。');
+        return;
       }
+
+      events = imported;
+      saveEvents();
+      renderCalendar();
+      renderList();
+      if (selectedDateForSheet) renderDaySheetItems();
+      alert('データを復元しました！');
     } catch (err) {
       alert('ファイルの読み込みに失敗しました。');
+      console.error('予定データを読み込めませんでした。', err);
+    } finally {
+      importDataFile.value = '';
     }
   };
   reader.readAsText(file);
 }
-
-

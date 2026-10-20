@@ -1,9 +1,9 @@
-const CACHE_NAME = 'smart-schedule-v15';
+const CACHE_NAME = 'smart-schedule-v16';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css',
-  './Script.js',
+  './style.css?v=16',
+  './Script.js?v=16',
   './manifest.json',
   './icons/icon-192.svg',
   './icons/icon-512.svg'
@@ -37,24 +37,32 @@ self.addEventListener('activate', (event) => {
 // ネットワーク優先 (Network-First) 戦略: 常に最新を取得し、オフライン時のみキャッシュを利用
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+    (async () => {
+      let networkResponse;
+      try {
+        networkResponse = await fetch(event.request);
+      } catch (networkError) {
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) return cachedResponse;
+        if (event.request.mode === 'navigate') {
+          const fallback = await caches.match('./index.html');
+          if (fallback) return fallback;
         }
-        return networkResponse;
-      })
-      .catch(() => {
-        // オフライン時のフォールバック
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) return cachedResponse;
-          if (event.request.mode === 'navigate') {
-            return caches.match('./index.html');
-          }
-        });
-      })
+        throw networkError;
+      }
+
+      if (
+        event.request.method === 'GET' &&
+        (networkResponse.ok || networkResponse.type === 'opaque')
+      ) {
+        try {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(event.request, networkResponse.clone());
+        } catch (error) {
+          console.error('キャッシュへの保存に失敗しました。', error);
+        }
+      }
+      return networkResponse;
+    })()
   );
 });
