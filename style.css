@@ -95,16 +95,38 @@ input, textarea, select {
   touch-action: manipulation !important;
 }
 
+#time-settings-card,
+#time-inputs-container,
+#start-time-wrapper,
+#end-time-wrapper {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+#time-inputs-container {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 @media (max-width: 639px) {
+  #time-settings-card {
+    padding: 16px;
+  }
+
   .time-picker-field {
     text-align: left !important;
     padding-inline: 12px !important;
   }
 }
 
+@media (min-width: 640px) {
+  #time-inputs-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .time-picker-field:focus {
   border-color: #4f46e5 !important;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
 }
 .time-picker-field:disabled {
   background-color: #f1f5f9 !important;
