@@ -99,12 +99,30 @@ const eventIdInput = document.getElementById('event-id');
 const eventTitleInput = document.getElementById('event-title-input');
 const eventDateInput = document.getElementById('event-date-input');
 const eventTimeInput = document.getElementById('event-time-input');
+const eventEndTimeInput = document.getElementById('event-end-time-input');
+const btnClearEndTime = document.getElementById('btn-clear-end-time');
+const timeErrorMessage = document.getElementById('time-error-message');
 const eventAllDayInput = document.getElementById('event-allday-input');
 const eventRepeatSelect = document.getElementById('event-repeat-select');
 const eventCategoryInput = document.getElementById('event-category-input');
 const eventDescriptionInput = document.getElementById('event-description-input');
 const quickHistoryChips = document.getElementById('quick-history-chips');
 const btnClearHistory = document.getElementById('btn-clear-history');
+
+// スマホ連携ガイド関連要素
+const mobileGuideModal = document.getElementById('mobile-guide-modal');
+const mobileGuideCard = document.getElementById('mobile-guide-card');
+const btnOpenMobileGuide = document.getElementById('btn-open-mobile-guide');
+const btnCloseMobileGuide = document.getElementById('btn-close-mobile-guide');
+const btnDoneMobileGuide = document.getElementById('btn-done-mobile-guide');
+const mobileUrlInput = document.getElementById('mobile-url-input');
+const btnCopyMobileUrl = document.getElementById('btn-copy-mobile-url');
+const copyBtnText = document.getElementById('copy-btn-text');
+const btnExportData = document.getElementById('btn-export-data');
+const importDataFile = document.getElementById('import-data-file');
+const toastMessage = document.getElementById('toast-message');
+const toastText = document.getElementById('toast-text');
+const toastIcon = document.getElementById('toast-icon');
 
 const filterPeriod = document.getElementById('filter-period');
 const filterStatus = document.getElementById('filter-status');
@@ -228,13 +246,33 @@ function setupEventListeners() {
   // 終日チェックボックスの切り替え制御
   if (eventAllDayInput) {
     eventAllDayInput.addEventListener('change', () => {
+      const isChecked = eventAllDayInput.checked;
       if (eventTimeInput) {
-        if (eventAllDayInput.checked) {
-          eventTimeInput.value = '';
-          eventTimeInput.disabled = true;
-        } else {
-          eventTimeInput.disabled = false;
-        }
+        if (isChecked) eventTimeInput.value = '';
+        eventTimeInput.disabled = isChecked;
+      }
+      if (eventEndTimeInput) {
+        if (isChecked) eventEndTimeInput.value = '';
+        eventEndTimeInput.disabled = isChecked;
+      }
+      if (timeErrorMessage) timeErrorMessage.classList.add('hidden');
+    });
+  }
+
+  // 開始時間・終了時間のバリデーションとクリア制御
+  if (eventTimeInput) {
+    eventTimeInput.addEventListener('change', validateTimeRange);
+    eventTimeInput.addEventListener('input', validateTimeRange);
+  }
+  if (eventEndTimeInput) {
+    eventEndTimeInput.addEventListener('change', validateTimeRange);
+    eventEndTimeInput.addEventListener('input', validateTimeRange);
+  }
+  if (btnClearEndTime) {
+    btnClearEndTime.addEventListener('click', () => {
+      if (eventEndTimeInput && !eventEndTimeInput.disabled) {
+        eventEndTimeInput.value = '';
+        validateTimeRange();
       }
     });
   }
@@ -245,6 +283,34 @@ function setupEventListeners() {
       saveHistory();
       renderHistoryChips();
     });
+  }
+
+  // スマホ連携ガイド
+  if (btnOpenMobileGuide) btnOpenMobileGuide.addEventListener('click', openMobileGuideModal);
+  if (btnCloseMobileGuide) btnCloseMobileGuide.addEventListener('click', closeMobileGuideModal);
+  if (btnDoneMobileGuide) btnDoneMobileGuide.addEventListener('click', closeMobileGuideModal);
+  if (mobileGuideModal) {
+    mobileGuideModal.addEventListener('click', (e) => {
+      if (e.target === mobileGuideModal) closeMobileGuideModal();
+    });
+  }
+  if (btnCopyMobileUrl) btnCopyMobileUrl.addEventListener('click', copyMobileUrl);
+  if (btnExportData) btnExportData.addEventListener('click', exportEventsData);
+  if (importDataFile) importDataFile.addEventListener('change', handleImportData);
+}
+
+// 時間帯のバリデーションチェック
+function validateTimeRange() {
+  if (!eventTimeInput || !eventEndTimeInput || !timeErrorMessage) return true;
+  const start = eventTimeInput.value;
+  const end = eventEndTimeInput.value;
+
+  if (start && end && end < start) {
+    timeErrorMessage.classList.remove('hidden');
+    return false;
+  } else {
+    timeErrorMessage.classList.add('hidden');
+    return true;
   }
 }
 
@@ -422,7 +488,7 @@ function renderCalendar() {
       // 時間表記よりも予定の内容（タイトル）を先頭・最優先で表示！
       // スマホでは枠の幅を最大限タイトルに使い、広い画面（PC）でのみ後ろに時間を表示
       let timeText = (!isAllDay && ev.time) 
-        ? `<span class="hidden sm:inline text-[8px] opacity-75 font-mono shrink-0 ml-0.5">${ev.time}</span>` 
+        ? `<span class="hidden sm:inline text-[8px] opacity-75 font-mono shrink-0 ml-0.5">${ev.time}${ev.endTime ? '〜' + ev.endTime : ''}</span>` 
         : '';
       
       // 予定内容（タイトル）を先に配置
@@ -520,7 +586,7 @@ function renderDaySheetItems() {
             ${ev.completed ? '<span class="text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 py-0.2 rounded font-bold">完了</span>' : ''}
             ${(ev.isAllDay || !ev.time) 
               ? `<span class="text-[10px] ${colorObj.solidBg} text-white px-1.5 py-0.2 rounded font-bold shadow-2xs"><i class="fa-solid fa-sun text-[9px] mr-1"></i>終日</span>`
-              : (ev.time ? `<span class="text-[10px] text-slate-500 font-bold"><i class="fa-regular fa-clock text-[9px]"></i> ${ev.time}</span>` : '')
+              : (ev.time ? `<span class="text-[10px] text-slate-500 font-bold"><i class="fa-regular fa-clock text-[9px]"></i> ${ev.time}${ev.endTime ? ' 〜 ' + ev.endTime : ''}</span>` : '')
             }
           </div>
           <h4 class="font-bold text-xs sm:text-sm truncate ${ev.completed ? 'line-through text-slate-500' : 'text-slate-800'}">
@@ -617,7 +683,7 @@ function renderList() {
             ${(ev.isAllDay || !ev.time) ? `<span class="text-[9px] ${colorObj.solidBg} text-white px-1.5 py-0.2 rounded font-bold shadow-2xs">終日</span>` : ''}
             ${ev.completed ? '<span class="text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 py-0.2 rounded font-bold">完了</span>' : ''}
             <span class="text-[10px] text-slate-500 font-medium">
-              ${formattedDateStr} ${(!ev.isAllDay && ev.time) ? ' ' + ev.time : ''}
+              ${formattedDateStr} ${(!ev.isAllDay && ev.time) ? ' ' + ev.time + (ev.endTime ? '〜' + ev.endTime : '') : ''}
             </span>
           </div>
           <h3 class="font-bold text-xs sm:text-sm truncate ${ev.completed ? 'line-through text-slate-500' : 'text-slate-800'}">
@@ -670,6 +736,11 @@ function openModal(eventObj = null, defaultDateStr = null) {
       eventTimeInput.value = isAllDay ? '' : (eventObj.time || '');
       eventTimeInput.disabled = isAllDay;
     }
+    if (eventEndTimeInput) {
+      eventEndTimeInput.value = isAllDay ? '' : (eventObj.endTime || '');
+      eventEndTimeInput.disabled = isAllDay;
+    }
+    if (timeErrorMessage) timeErrorMessage.classList.add('hidden');
 
     if (eventRepeatSelect) eventRepeatSelect.value = eventObj.repeat || 'none';
     if (eventCategoryInput) eventCategoryInput.value = eventObj.category || '仕事';
@@ -687,6 +758,11 @@ function openModal(eventObj = null, defaultDateStr = null) {
       eventTimeInput.value = '';
       eventTimeInput.disabled = false;
     }
+    if (eventEndTimeInput) {
+      eventEndTimeInput.value = '';
+      eventEndTimeInput.disabled = false;
+    }
+    if (timeErrorMessage) timeErrorMessage.classList.add('hidden');
 
     if (eventRepeatSelect) eventRepeatSelect.value = 'none';
     const defaultColorRadio = eventForm.querySelector('input[name="event-color"][value="blue"]');
@@ -729,12 +805,19 @@ function handleFormSubmit(e) {
   const startDate = eventDateInput ? eventDateInput.value : '';
   const isAllDay = eventAllDayInput ? eventAllDayInput.checked : false;
   const time = isAllDay ? '' : (eventTimeInput ? eventTimeInput.value : '');
+  const endTime = isAllDay ? '' : (eventEndTimeInput ? eventEndTimeInput.value : '');
   const repeat = eventRepeatSelect ? eventRepeatSelect.value : 'none';
   const category = eventCategoryInput ? eventCategoryInput.value : '仕事';
   const description = eventDescriptionInput ? eventDescriptionInput.value.trim() : '';
   const color = eventForm.querySelector('input[name="event-color"]:checked')?.value || 'blue';
 
   if (!title || !startDate) return;
+
+  // 開始時間・終了時間の整合性チェック（終了時間が開始時間より前なら送信中断）
+  if (!isAllDay && !validateTimeRange()) {
+    if (eventEndTimeInput) eventEndTimeInput.focus();
+    return;
+  }
 
   if (eventIdInput && eventIdInput.value) {
     events = events.filter(item => item.id !== id);
@@ -749,6 +832,7 @@ function handleFormSubmit(e) {
       title,
       date: startDate,
       time,
+      endTime,
       isAllDay,
       repeat: 'none',
       category,
@@ -772,6 +856,7 @@ function handleFormSubmit(e) {
         title,
         date: dateStr,
         time,
+        endTime,
         isAllDay,
         repeat,
         category,
@@ -922,6 +1007,11 @@ function compareEventsByTime(a, b) {
   const timeB = b.time || '';
   if (timeA !== timeB) {
     return timeA.localeCompare(timeB);
+  }
+  const endTimeA = a.endTime || '';
+  const endTimeB = b.endTime || '';
+  if (endTimeA !== endTimeB) {
+    return endTimeA.localeCompare(endTimeB);
   }
   return (a.title || '').localeCompare(b.title || '');
 }
