@@ -112,6 +112,13 @@ input, textarea, select {
     padding: 16px;
   }
 
+  #event-date-input,
+  .time-picker-field {
+    width: calc(100% - 12px) !important;
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+  }
+
   .time-picker-field {
     text-align: left !important;
     padding-inline: 10px !important;
