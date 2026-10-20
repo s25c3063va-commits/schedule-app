@@ -103,9 +103,8 @@ const eventEndTimeInput = document.getElementById('event-end-time-input');
 const btnClearEndTime = document.getElementById('btn-clear-end-time');
 const timeErrorMessage = document.getElementById('time-error-message');
 const eventAllDayInput = document.getElementById('event-allday-input');
-const endDateDisplay = document.getElementById('end-date-display');
-const startTimeWrapper = document.getElementById('start-time-wrapper');
-const endTimeWrapper = document.getElementById('end-time-wrapper');
+const startTimeRow = document.getElementById('start-time-row');
+const endTimeRow = document.getElementById('end-time-row');
 const eventRepeatSelect = document.getElementById('event-repeat-select');
 const eventCategoryInput = document.getElementById('event-category-input');
 const eventDescriptionInput = document.getElementById('event-description-input');
@@ -247,11 +246,6 @@ function setupEventListeners() {
   if (eventForm) eventForm.addEventListener('submit', handleFormSubmit);
 
   // 終日トグル切り替え時の時間入力表示制御
-  if (eventDateInput) {
-    eventDateInput.addEventListener('change', syncEndDateDisplay);
-    eventDateInput.addEventListener('input', syncEndDateDisplay);
-  }
-
   if (eventAllDayInput) {
     eventAllDayInput.addEventListener('change', () => {
       const isChecked = eventAllDayInput.checked;
@@ -308,22 +302,10 @@ function setupEventListeners() {
   if (importDataFile) importDataFile.addEventListener('change', handleImportData);
 }
 
-// 終日表示切り替え（終日ONのときは時間バッジを非表示）
+// 終日表示切り替え（終日ONのときは開始・終了時間行を非表示）
 function updateAllDayVisibility(isAllDay) {
-  if (startTimeWrapper) startTimeWrapper.style.display = isAllDay ? 'none' : 'block';
-  if (endTimeWrapper) endTimeWrapper.style.display = isAllDay ? 'none' : 'flex';
-}
-
-// 終了日付表示の同期（開始日と同じ日付を表示）
-function syncEndDateDisplay() {
-  if (endDateDisplay && eventDateInput) {
-    if (eventDateInput.value) {
-      const parts = eventDateInput.value.split('-');
-      endDateDisplay.textContent = `${parts[0]}/${parts[1]}/${parts[2]}`;
-    } else {
-      endDateDisplay.textContent = '----/--/--';
-    }
-  }
+  if (startTimeRow) startTimeRow.style.display = isAllDay ? 'none' : 'flex';
+  if (endTimeRow) endTimeRow.style.display = isAllDay ? 'none' : 'flex';
 }
 
 // 時間帯のバリデーションチェック
@@ -760,7 +742,6 @@ function openModal(eventObj = null, defaultDateStr = null) {
     const isAllDay = !!(eventObj.isAllDay || (!eventObj.time && eventObj.time !== undefined));
     if (eventAllDayInput) eventAllDayInput.checked = isAllDay;
     updateAllDayVisibility(isAllDay);
-    syncEndDateDisplay();
     if (eventTimeInput) {
       eventTimeInput.value = isAllDay ? '' : (eventObj.time || '');
       eventTimeInput.disabled = isAllDay;
@@ -784,7 +765,6 @@ function openModal(eventObj = null, defaultDateStr = null) {
 
     if (eventAllDayInput) eventAllDayInput.checked = false;
     updateAllDayVisibility(false);
-    syncEndDateDisplay();
     if (eventTimeInput) {
       eventTimeInput.value = '';
       eventTimeInput.disabled = false;

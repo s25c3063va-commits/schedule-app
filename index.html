@@ -26,7 +26,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
@@ -217,7 +217,7 @@
 
   <!-- 予定の追加・編集 Modal / ボトムシート -->
   <div id="event-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-3 hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 transform transition-transform duration-200 scale-95 max-h-[90vh] flex flex-col" id="modal-card">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 transform transition-transform duration-200 scale-95 max-h-[85vh] sm:max-h-[90vh] flex flex-col" id="modal-card">
       <div class="bg-indigo-600 text-white px-4 py-3 flex items-center justify-between shrink-0">
         <h3 id="modal-title" class="font-bold text-sm sm:text-base flex items-center gap-2">
           <i class="fa-solid fa-calendar-plus"></i> 予定を追加
@@ -227,7 +227,7 @@
         </button>
       </div>
 
-      <form id="event-form" class="p-4 flex flex-col gap-3 overflow-y-auto scrollbar-thin flex-1 pb-safe">
+      <form id="event-form" class="p-4 flex flex-col gap-3 overflow-y-auto scrollbar-thin flex-1">
         <input type="hidden" id="event-id">
 
         <!-- クイック履歴からの入力エリア -->
@@ -264,32 +264,29 @@
             </label>
           </div>
 
-          <!-- 2行目：開始 -->
-          <div class="flex items-center justify-between px-3.5 py-2 gap-2">
-            <span class="text-slate-700 font-medium text-sm shrink-0">開始</span>
-            <div class="flex items-center gap-1.5 justify-end flex-1 min-w-0">
-              <!-- 開始日付 -->
-              <input type="date" id="event-date-input" required class="ios-badge-input cursor-pointer min-w-0 flex-1 sm:flex-none">
-              <!-- 開始時間 -->
-              <div id="start-time-wrapper" class="shrink-0">
-                <input type="time" id="event-time-input" class="ios-badge-input cursor-pointer w-24 sm:w-28 text-center">
-              </div>
-            </div>
+          <!-- 2行目：日付 -->
+          <div class="flex items-center justify-between px-3.5 py-2.5">
+            <span class="text-slate-700 font-medium text-sm shrink-0">日付</span>
+            <input type="date" id="event-date-input" required class="ios-badge-input cursor-pointer font-semibold text-slate-800 text-center">
           </div>
 
-          <!-- 3行目：終了 -->
-          <div class="flex items-center justify-between px-3.5 py-2 gap-2">
-            <span class="text-slate-700 font-medium text-sm shrink-0">終了</span>
-            <div class="flex items-center gap-1.5 justify-end flex-1 min-w-0">
-              <!-- 終了日付（表示バッジ） -->
-              <span id="end-date-display" class="ios-badge-input inline-flex items-center justify-center cursor-default min-w-0 flex-1 sm:flex-none text-slate-600 bg-slate-100/80">----/--/--</span>
-              <!-- 終了時間 -->
-              <div id="end-time-wrapper" class="flex items-center gap-1 shrink-0">
-                <input type="time" id="event-end-time-input" class="ios-badge-input cursor-pointer w-24 sm:w-28 text-center" placeholder="--:--">
-                <button type="button" id="btn-clear-end-time" class="text-slate-400 hover:text-rose-600 active:text-rose-700 p-1 text-sm rounded transition-colors" title="終了時間をクリア">
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
-              </div>
+          <!-- 3行目：開始時間（終日OFF時） -->
+          <div id="start-time-row" class="flex items-center justify-between px-3.5 py-2.5">
+            <span class="text-slate-700 font-medium text-sm shrink-0">開始</span>
+            <input type="time" id="event-time-input" class="ios-badge-input cursor-pointer font-semibold text-slate-800 text-center w-28 sm:w-32">
+          </div>
+
+          <!-- 4行目：終了時間（終日OFF時・確実にタップ可能） -->
+          <div id="end-time-row" class="flex items-center justify-between px-3.5 py-2.5">
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span class="text-slate-700 font-medium text-sm">終了</span>
+              <span class="text-[10px] text-slate-400 font-normal">（任意）</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <input type="time" id="event-end-time-input" class="ios-badge-input cursor-pointer font-semibold text-slate-800 text-center w-28 sm:w-32" placeholder="--:--">
+              <button type="button" id="btn-clear-end-time" class="text-xs text-indigo-600 hover:text-indigo-800 active:underline px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 transition-colors shrink-0 font-medium" title="終了時間をクリア">
+                クリア
+              </button>
             </div>
           </div>
 
@@ -336,14 +333,16 @@
           </div>
         </div>
 
-        <div>
+        <!-- 詳細メモエリア（スクロールして書き込めるよう十分な高さを確保） -->
+        <div class="pb-16 sm:pb-8">
           <label class="block text-xs font-bold text-slate-700 mb-1">詳細メモ</label>
-          <textarea id="event-description-input" rows="2" placeholder="詳細メモを入力..." class="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+          <textarea id="event-description-input" rows="3" placeholder="詳細メモを入力..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none min-h-[72px]"></textarea>
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-          <button type="button" id="btn-cancel-modal" class="px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">キャンセル</button>
-          <button type="submit" class="px-5 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">保存する</button>
+        <!-- フッターボタン（スクロールしても常にアクセスしやすい下部固定バー） -->
+        <div class="sticky bottom-0 bg-white/95 backdrop-blur-xs py-3 -mx-4 -mb-4 px-4 border-t border-slate-100 flex items-center justify-end gap-2.5 z-10 shadow-xs">
+          <button type="button" id="btn-cancel-modal" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">キャンセル</button>
+          <button type="submit" class="px-6 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-colors">保存する</button>
         </div>
       </form>
     </div>
@@ -465,6 +464,6 @@
   </div>
 
   <!-- JavaScript -->
-  <script src="Script.js?v=12"></script>
+  <script src="Script.js?v=13"></script>
 </body>
 </html>
