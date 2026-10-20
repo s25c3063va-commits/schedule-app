@@ -25,18 +25,29 @@ input, textarea, select {
   font-size: 16px !important;
 }
 
-/* モバイル対応：時間入力欄のズレ防止と高さ・位置統一 */
+/* モバイル対応：時間入力欄のはみ出し防止・サイズ完全収容・ズレ防止 */
 input[type="time"] {
-  display: inline-flex;
-  align-items: center;
-  min-height: 40px;
-  line-height: normal;
-  box-sizing: border-box;
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  line-height: 38px !important;
+  box-sizing: border-box !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding: 0 6px !important;
+  font-size: 15px !important;
 }
 
 input[type="time"]::-webkit-date-and-time-value {
-  text-align: left;
-  line-height: normal;
+  text-align: center;
+  line-height: 38px;
+  height: 38px;
+  margin: 0;
+  padding: 0;
 }
 
 @media (min-width: 640px) {
