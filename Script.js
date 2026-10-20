@@ -1027,3 +1027,92 @@ function compareEventsByTime(a, b) {
   return (a.title || '').localeCompare(b.title || '');
 }
 
+// 9. スマホ連携モーダル & データ管理
+function openMobileGuideModal() {
+  if (!mobileGuideModal) return;
+  generateMobileQrCode();
+  mobileGuideModal.classList.remove('hidden');
+  setTimeout(() => {
+    mobileGuideModal.classList.remove('opacity-0');
+    if (mobileGuideCard) mobileGuideCard.classList.remove('scale-95');
+  }, 10);
+}
+
+function closeMobileGuideModal() {
+  if (!mobileGuideModal) return;
+  mobileGuideModal.classList.add('opacity-0');
+  if (mobileGuideCard) mobileGuideCard.classList.add('scale-95');
+  setTimeout(() => {
+    mobileGuideModal.classList.add('hidden');
+  }, 200);
+}
+
+function generateMobileQrCode() {
+  const qrContainer = document.getElementById('qrcode');
+  if (!qrContainer) return;
+  qrContainer.innerHTML = '';
+  const currentUrl = window.location.href;
+  if (mobileUrlInput) mobileUrlInput.value = currentUrl;
+  
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(qrContainer, {
+      text: currentUrl,
+      width: 140,
+      height: 140,
+      colorDark: "#312e81",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
+}
+
+function copyMobileUrl() {
+  const url = window.location.href;
+  const copyBtnText = document.getElementById('copy-btn-text');
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      if (copyBtnText) copyBtnText.textContent = 'コピー完了!';
+      setTimeout(() => {
+        if (copyBtnText) copyBtnText.textContent = 'コピー';
+      }, 2000);
+    }).catch(() => {
+      prompt('URLをコピーしてください:', url);
+    });
+  } else {
+    prompt('URLをコピーしてください:', url);
+  }
+}
+
+function exportEventsData() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(events, null, 2));
+  const dlAnchor = document.createElement('a');
+  dlAnchor.setAttribute("href", dataStr);
+  dlAnchor.setAttribute("download", `schedule-backup-${formatDateKey(new Date())}.json`);
+  dlAnchor.click();
+}
+
+function handleImportData(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const imported = JSON.parse(event.target.result);
+      if (Array.isArray(imported)) {
+        events = imported;
+        saveEvents();
+        renderCalendar();
+        renderDaySheet();
+        alert('データを復元しました！');
+      } else {
+        alert('ファイルの形式が正しくありません。');
+      }
+    } catch (err) {
+      alert('ファイルの読み込みに失敗しました。');
+    }
+  };
+  reader.readAsText(file);
+}
+
+

@@ -25,6 +25,11 @@ input, textarea, select {
   font-size: 16px !important;
 }
 
+/* モーダル内フォームの要素がFlexbox縮小で潰れるのを完全に防止 */
+#event-form > * {
+  flex-shrink: 0;
+}
+
 /* iOS風トグルスイッチ */
 .ios-switch {
   position: relative;
@@ -69,16 +74,18 @@ input, textarea, select {
 .ios-badge-input {
   background-color: #f1f5f9 !important;
   color: #1e293b !important;
-  border: 1px solid transparent !important;
+  border: 1px solid #e2e8f0 !important;
   border-radius: 8px !important;
-  padding: 4px 8px !important;
-  font-size: 13.5px !important;
+  padding: 4px 10px !important;
+  font-size: 14px !important;
   font-weight: 500;
-  height: 34px !important;
-  min-height: 34px !important;
+  height: 36px !important;
+  min-height: 36px !important;
   box-sizing: border-box !important;
   outline: none;
   transition: all 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .ios-badge-input:hover {
   background-color: #e2e8f0 !important;
