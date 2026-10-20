@@ -103,8 +103,8 @@ const eventEndTimeInput = document.getElementById('event-end-time-input');
 const btnClearEndTime = document.getElementById('btn-clear-end-time');
 const timeErrorMessage = document.getElementById('time-error-message');
 const eventAllDayInput = document.getElementById('event-allday-input');
-const startTimeRow = document.getElementById('start-time-row');
-const endTimeRow = document.getElementById('end-time-row');
+const timeInputsContainer = document.getElementById('time-inputs-container');
+const alldayNotice = document.getElementById('allday-notice');
 const eventRepeatSelect = document.getElementById('event-repeat-select');
 const eventCategoryInput = document.getElementById('event-category-input');
 const eventDescriptionInput = document.getElementById('event-description-input');
@@ -280,6 +280,17 @@ function setupEventListeners() {
     });
   }
 
+  // 日付・時間入力のタップサポート（スマホ・PCで枠内のどこをタップしても確実にピッカーを開く）
+  [eventDateInput, eventTimeInput, eventEndTimeInput].forEach(input => {
+    if (input) {
+      input.addEventListener('click', () => {
+        if (!input.disabled && typeof input.showPicker === 'function') {
+          try { input.showPicker(); } catch (e) {}
+        }
+      });
+    }
+  });
+
   if (btnClearHistory) {
     btnClearHistory.addEventListener('click', () => {
       historyTemplates = [];
@@ -302,10 +313,13 @@ function setupEventListeners() {
   if (importDataFile) importDataFile.addEventListener('change', handleImportData);
 }
 
-// 終日表示切り替え（終日ONのときは開始・終了時間行を非表示）
+// 終日表示切り替え（終日ONのときは2列時間入力枠を非表示にして案内を表示）
 function updateAllDayVisibility(isAllDay) {
-  if (startTimeRow) startTimeRow.style.display = isAllDay ? 'none' : 'flex';
-  if (endTimeRow) endTimeRow.style.display = isAllDay ? 'none' : 'flex';
+  if (timeInputsContainer) timeInputsContainer.style.display = isAllDay ? 'none' : 'grid';
+  if (alldayNotice) {
+    if (isAllDay) alldayNotice.classList.remove('hidden');
+    else alldayNotice.classList.add('hidden');
+  }
 }
 
 // 時間帯のバリデーションチェック

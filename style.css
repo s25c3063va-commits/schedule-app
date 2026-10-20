@@ -33,29 +33,32 @@ input, textarea, select {
 /* iOS風トグルスイッチ */
 .ios-switch {
   position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
 }
 .ios-switch input {
   opacity: 0;
   width: 0;
   height: 0;
+  position: absolute;
 }
 .ios-switch-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
+  position: relative;
+  width: 40px;
+  height: 22px;
   background-color: #cbd5e1;
   transition: .2s ease-in-out;
   border-radius: 9999px;
+  flex-shrink: 0;
 }
 .ios-switch-slider:before {
   position: absolute;
   content: "";
-  height: 20px;
-  width: 20px;
+  height: 18px;
+  width: 18px;
   left: 2px;
   bottom: 2px;
   background-color: white;
@@ -67,33 +70,37 @@ input, textarea, select {
   background-color: #4f46e5;
 }
 .ios-switch input:checked + .ios-switch-slider:before {
-  transform: translateX(20px);
+  transform: translateX(18px);
 }
 
-/* iOS風 日時バッジ入力 */
-.ios-badge-input {
-  background-color: #f1f5f9 !important;
-  color: #1e293b !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 8px !important;
-  padding: 4px 10px !important;
-  font-size: 14px !important;
-  font-weight: 500;
-  height: 36px !important;
-  min-height: 36px !important;
-  box-sizing: border-box !important;
-  outline: none;
-  transition: all 0.15s ease;
-  -webkit-appearance: none;
-  appearance: none;
-}
-.ios-badge-input:hover {
-  background-color: #e2e8f0 !important;
-}
-.ios-badge-input:focus {
-  border-color: #6366f1 !important;
+/* 時間入力フィールド：iOS Safari・Android・PCすべてで確実にピッカーが開くスタイル */
+.time-picker-field {
+  width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 10px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 0.75rem !important;
   background-color: #ffffff !important;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  color: #1e293b !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+}
+.time-picker-field:focus {
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+}
+.time-picker-field:disabled {
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border-color: #e2e8f0 !important;
+  cursor: not-allowed !important;
 }
 
 @media (min-width: 640px) {

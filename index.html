@@ -26,7 +26,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
@@ -249,49 +249,58 @@
                  class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
         </div>
 
-        <!-- iOS風 日時・時間設定カード -->
-        <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs divide-y divide-slate-100 overflow-hidden shrink-0 w-full" style="min-height: max-content;">
-          
-          <!-- 1行目：終日トグルスイッチ -->
-          <div class="flex items-center justify-between px-3.5 py-2.5">
-            <div class="flex items-center gap-2 text-slate-700 font-medium text-sm">
-              <span class="w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center text-[9px] text-slate-500 font-bold shrink-0">24</span>
-              <span>終日</span>
-            </div>
+        <!-- 日付入力 -->
+        <div class="shrink-0">
+          <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+            <i class="fa-regular fa-calendar text-indigo-600"></i> 日付 <span class="text-red-500">*</span>
+          </label>
+          <input type="date" id="event-date-input" required 
+                 class="w-full border border-slate-300 rounded-xl px-3 h-[42px] text-sm font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer">
+        </div>
+
+        <!-- 時間設定カード (2列グリッドで確実に入力できる洗練されたUI) -->
+        <div class="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-3 flex flex-col gap-2.5 shrink-0">
+          <!-- カードヘッダー：時間設定ラベル & 終日スイッチ -->
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <i class="fa-regular fa-clock text-indigo-600"></i> 時間設定
+            </span>
             <label class="ios-switch">
+              <span class="text-xs font-medium text-slate-600">終日</span>
               <input type="checkbox" id="event-allday-input">
               <span class="ios-switch-slider"></span>
             </label>
           </div>
 
-          <!-- 2行目：日付 -->
-          <div class="flex items-center justify-between px-3.5 py-2.5">
-            <span class="text-slate-700 font-medium text-sm shrink-0">日付</span>
-            <input type="date" id="event-date-input" required class="ios-badge-input cursor-pointer font-semibold text-slate-800 text-center w-36 max-w-[150px]">
+          <!-- 2列グリッド：開始時間 & 終了時間 -->
+          <div id="time-inputs-container" class="grid grid-cols-2 gap-2.5 w-full">
+            <!-- 開始時間 -->
+            <div id="start-time-wrapper" class="flex flex-col gap-1 min-w-0">
+              <label class="text-[11px] font-semibold text-slate-600">開始時間</label>
+              <input type="time" id="event-time-input" class="time-picker-field" placeholder="--:--">
+            </div>
+
+            <!-- 終了時間 -->
+            <div id="end-time-wrapper" class="flex flex-col gap-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <label class="text-[11px] font-semibold text-slate-600">
+                  終了時間 <span class="text-[10px] text-slate-400 font-normal">（任意）</span>
+                </label>
+                <button type="button" id="btn-clear-end-time" class="text-[11px] text-indigo-600 hover:text-indigo-800 active:underline font-medium" title="終了時間をクリア">
+                  クリア
+                </button>
+              </div>
+              <input type="time" id="event-end-time-input" class="time-picker-field" placeholder="--:--">
+            </div>
           </div>
 
-          <!-- 3行目：開始時間（終日OFF時） -->
-          <div id="start-time-row" class="flex items-center justify-between px-3.5 py-2.5">
-            <span class="text-slate-700 font-medium text-sm shrink-0">開始</span>
-            <input type="time" id="event-time-input" class="ios-badge-input cursor-pointer font-semibold text-slate-800 text-center w-24 sm:w-28">
-          </div>
-
-          <!-- 4行目：終了時間（終日OFF時・確実にタップ可能） -->
-          <div id="end-time-row" class="flex items-center justify-between px-3.5 py-2.5">
-            <div class="flex items-center gap-1.5 shrink-0">
-              <span class="text-slate-700 font-medium text-sm">終了</span>
-              <span class="text-[10px] text-slate-400 font-normal">（任意）</span>
-            </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <input type="time" id="event-end-time-input" class="ios-badge-input cursor-pointer font-semibold text-slate-800 text-center w-24 sm:w-28" placeholder="--:--">
-              <button type="button" id="btn-clear-end-time" class="text-xs text-indigo-600 hover:text-indigo-800 active:underline px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition-colors shrink-0 font-medium" title="終了時間をクリア">
-                クリア
-              </button>
-            </div>
+          <!-- 終日ON時の案内メッセージ -->
+          <div id="allday-notice" class="hidden py-1.5 px-3 text-center text-xs text-slate-500 font-medium bg-white/80 rounded-xl border border-slate-200">
+            <i class="fa-solid fa-sun text-amber-500 mr-1"></i> 終日の予定として登録されます
           </div>
 
           <!-- 時間エラーメッセージ -->
-          <div id="time-error-message" class="hidden px-3.5 py-2 text-[11px] text-rose-600 font-medium flex items-center gap-1.5 bg-rose-50/80 border-t border-rose-100">
+          <div id="time-error-message" class="hidden px-3 py-2 text-[11px] text-rose-600 font-medium flex items-center gap-1.5 bg-rose-50/90 border border-rose-200 rounded-xl">
             <i class="fa-solid fa-triangle-exclamation shrink-0"></i>
             <span>終了時間は開始時間以降に設定してください</span>
           </div>
@@ -464,6 +473,6 @@
   </div>
 
   <!-- JavaScript -->
-  <script src="Script.js?v=14"></script>
+  <script src="Script.js?v=15"></script>
 </body>
 </html>
