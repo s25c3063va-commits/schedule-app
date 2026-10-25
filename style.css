@@ -114,7 +114,7 @@ input, textarea, select {
 
   #event-date-input,
   .time-picker-field {
-    width: calc(100% - 20px) !important;
+    width: calc(100% - 25px) !important;
     margin-inline: auto !important;
     box-sizing: border-box !important;
   }
