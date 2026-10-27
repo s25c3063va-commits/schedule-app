@@ -1,9 +1,9 @@
-const CACHE_NAME = 'smart-schedule-v21';
+const CACHE_NAME = 'smart-schedule-v22';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css?v=20',
-  './Script.js?v=17',
+  './Script.js?v=18',
   './manifest.json',
   './icons/icon-192.svg',
   './icons/icon-512.svg'
@@ -64,5 +64,16 @@ self.addEventListener('fetch', (event) => {
       }
       return networkResponse;
     })()
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      const appClient = clients.find((client) => 'focus' in client);
+      if (appClient) return appClient.focus();
+      return self.clients.openWindow('./index.html');
+    })
   );
 });

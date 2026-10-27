@@ -49,6 +49,7 @@ function isValidEventData(item) {
     (item.description !== undefined && typeof item.description !== 'string') ||
     (item.completed !== undefined && typeof item.completed !== 'boolean') ||
     (item.isAllDay !== undefined && typeof item.isAllDay !== 'boolean') ||
+    (item.notificationEnabled !== undefined && typeof item.notificationEnabled !== 'boolean') ||
     (item.groupId !== undefined && typeof item.groupId !== 'string') ||
     (item.repeat !== undefined && typeof item.repeat !== 'string')
   ) return false;
@@ -151,6 +152,7 @@ const eventEndTimeInput = document.getElementById('event-end-time-input');
 const btnClearEndTime = document.getElementById('btn-clear-end-time');
 const timeErrorMessage = document.getElementById('time-error-message');
 const eventAllDayInput = document.getElementById('event-allday-input');
+const eventNotificationInput = document.getElementById('event-notification-input');
 const timeInputsContainer = document.getElementById('time-inputs-container');
 const alldayNotice = document.getElementById('allday-notice');
 const eventRepeatSelect = document.getElementById('event-repeat-select');
@@ -183,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCalendar();
   renderList();
   setupEventListeners();
+  startReminderMonitoring();
   renderHistoryChips();
   setupSwipeGesture();
 });
@@ -209,6 +212,61 @@ function startRealtimeClock() {
 
   updateClock();
   setInterval(updateClock, 1000);
+}
+
+let lastReminderCheckAt = Date.now();
+
+function startReminderMonitoring() {
+  lastReminderCheckAt = Date.now();
+  checkScheduledReminders();
+  setInterval(checkScheduledReminders, 15000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkScheduledReminders();
+  });
+}
+
+function checkScheduledReminders() {
+  const now = Date.now();
+  const previousCheck = lastReminderCheckAt;
+  lastReminderCheckAt = now;
+
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  events.forEach((event) => {
+    if (!event.notificationEnabled || event.isAllDay || !event.time) return;
+    if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(event.time)) return;
+    const dateParts = event.date.split('-').map(Number);
+    const timeParts = event.time.split(':').map(Number);
+    if (dateParts.length !== 3 || timeParts.length !== 2 || timeParts.some(Number.isNaN)) return;
+
+    const startAt = new Date(
+      dateParts[0],
+      dateParts[1] - 1,
+      dateParts[2],
+      timeParts[0],
+      timeParts[1]
+    ).getTime();
+    const reminderAt = startAt - 30 * 60 * 1000;
+    if (reminderAt > previousCheck && reminderAt <= now) {
+      showEventReminder(event);
+    }
+  });
+}
+
+async function showEventReminder(event) {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    if (typeof registration.showNotification !== 'function') {
+      throw new Error('このブラウザーではService Worker通知を利用できません。');
+    }
+    await registration.showNotification('予定のお知らせ', {
+      body: `30分後に「${event.title}」の予定があります（${event.time}）。`,
+      icon: './icons/icon-192.svg',
+      tag: `schedule-${event.id}-${event.date}`
+    });
+  } catch (error) {
+    console.error('予定の通知を表示できませんでした。', error);
+  }
 }
 
 // 2. イベントリスナー設定
@@ -299,6 +357,8 @@ function setupEventListeners() {
     eventAllDayInput.addEventListener('change', () => {
       const isChecked = eventAllDayInput.checked;
       updateAllDayVisibility(isChecked);
+      if (eventNotificationInput && isChecked) eventNotificationInput.checked = false;
+      updateNotificationAvailability(isChecked);
       if (eventTimeInput) {
         if (isChecked) eventTimeInput.value = '';
         eventTimeInput.disabled = isChecked;
@@ -311,10 +371,37 @@ function setupEventListeners() {
     });
   }
 
+  if (eventNotificationInput) {
+    eventNotificationInput.addEventListener('change', async () => {
+      if (!eventNotificationInput.checked) return;
+      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        eventNotificationInput.checked = false;
+        alert('このブラウザーでは通知を利用できません。');
+        return;
+      }
+
+      try {
+        const permission = Notification.permission === 'default'
+          ? await Notification.requestPermission()
+          : Notification.permission;
+        if (permission !== 'granted') {
+          eventNotificationInput.checked = false;
+          alert('通知が許可されていません。ブラウザーの設定から通知を許可してください。');
+        }
+      } catch (error) {
+        eventNotificationInput.checked = false;
+        console.error('通知の許可を確認できませんでした。', error);
+        alert('通知の許可を確認できませんでした。');
+      }
+    });
+  }
+
   // 開始時間・終了時間のバリデーションとクリア制御
   if (eventTimeInput) {
     eventTimeInput.addEventListener('change', validateTimeRange);
     eventTimeInput.addEventListener('input', validateTimeRange);
+    eventTimeInput.addEventListener('change', () => updateNotificationAvailability(!!eventAllDayInput?.checked));
+    eventTimeInput.addEventListener('input', () => updateNotificationAvailability(!!eventAllDayInput?.checked));
   }
   if (eventEndTimeInput) {
     eventEndTimeInput.addEventListener('change', validateTimeRange);
@@ -369,6 +456,12 @@ function updateAllDayVisibility(isAllDay) {
     if (isAllDay) alldayNotice.classList.remove('hidden');
     else alldayNotice.classList.add('hidden');
   }
+}
+
+function updateNotificationAvailability(isAllDay) {
+  if (!eventNotificationInput) return;
+  eventNotificationInput.disabled = isAllDay || !eventTimeInput?.value;
+  if (eventNotificationInput.disabled) eventNotificationInput.checked = false;
 }
 
 // 時間帯のバリデーションチェック
@@ -845,6 +938,10 @@ function openModal(eventObj = null, defaultDateStr = null) {
     if (eventRepeatSelect) eventRepeatSelect.value = eventObj.repeat || 'none';
     if (eventCategoryInput) eventCategoryInput.value = eventObj.category || '仕事';
     if (eventDescriptionInput) eventDescriptionInput.value = eventObj.description || '';
+    if (eventNotificationInput) {
+      eventNotificationInput.checked = eventObj.notificationEnabled === true && !isAllDay;
+    }
+    updateNotificationAvailability(isAllDay);
 
     const colorRadio = eventForm.querySelector(`input[name="event-color"][value="${eventObj.color || 'blue'}"]`);
     if (colorRadio) colorRadio.checked = true;
@@ -855,6 +952,10 @@ function openModal(eventObj = null, defaultDateStr = null) {
 
     if (eventAllDayInput) eventAllDayInput.checked = false;
     updateAllDayVisibility(false);
+    if (eventNotificationInput) {
+      eventNotificationInput.checked = false;
+    }
+    updateNotificationAvailability(false);
     if (eventTimeInput) {
       eventTimeInput.value = '';
       eventTimeInput.disabled = false;
@@ -910,6 +1011,7 @@ function handleFormSubmit(e) {
   let repeat = eventRepeatSelect ? eventRepeatSelect.value : 'none';
   const category = eventCategoryInput ? eventCategoryInput.value : '仕事';
   const description = eventDescriptionInput ? eventDescriptionInput.value.trim() : '';
+  const notificationEnabled = !isAllDay && !!eventNotificationInput?.checked;
   const color = eventForm.querySelector('input[name="event-color"]:checked')?.value || 'blue';
 
   if (!title || !startDate) return;
@@ -955,6 +1057,7 @@ function handleFormSubmit(e) {
       category,
       color,
       description,
+      notificationEnabled,
       completed: false
     });
   } else {
@@ -983,6 +1086,7 @@ function handleFormSubmit(e) {
         category,
         color,
         description,
+        notificationEnabled,
         completed: previousOccurrence?.completed || false
       });
 
